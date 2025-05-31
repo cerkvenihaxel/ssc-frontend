@@ -65,6 +65,10 @@ export const useAdmin = () => {
     return handleRequest(() => adminRepository.getProviderById(id));
   }, [handleRequest]);
 
+  const getProviderDetailsById = useCallback(async (id: string) => {
+    return handleRequest(() => adminRepository.getProviderDetailsById(id));
+  }, [handleRequest]);
+
   const updateProvider = useCallback(async (id: string, data: UpdateUserRequest) => {
     return handleRequest(() => adminRepository.updateProvider(id, data));
   }, [handleRequest]);
@@ -164,6 +168,7 @@ export const useAdmin = () => {
     // Proveedores
     getAllProviders,
     getProviderById,
+    getProviderDetailsById,
     updateProvider,
     deleteProvider,
     createProvider,

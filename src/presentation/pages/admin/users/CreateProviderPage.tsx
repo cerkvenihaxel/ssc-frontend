@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Save, Building, Mail, Phone, FileText, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Save, Building, Mail, Phone, FileText, User, Plus, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
 import { useToast } from '../../../../shared/components/ui/ToastContainer';
 import { useAdmin } from '../../../hooks/useAdmin';
-import type { CreateProviderRequest } from '../../../../infrastructure/repositories/HttpAdminRepository';
+import { getSpecialtyColorClasses, renderSpecialtyIcon } from '../../../../shared/utils/specialtyIcons';
+import type { CreateProviderRequest, Especialidad } from '../../../../infrastructure/repositories/HttpAdminRepository';
 
 interface CreateProviderForm {
   email: string;
@@ -25,7 +26,7 @@ interface CreateProviderForm {
 const CreateProviderPage: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
-  const { loading, createProvider } = useAdmin();
+  const { loading, createProvider, getAllEspecialidades } = useAdmin();
 
   const [formData, setFormData] = useState<CreateProviderForm>({
     email: '',
@@ -42,6 +43,28 @@ const CreateProviderPage: React.FC = () => {
   });
 
   const [errors, setErrors] = useState<Partial<CreateProviderForm>>({});
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+  const [loadingEspecialidades, setLoadingEspecialidades] = useState(false);
+
+  // Cargar especialidades al montar el componente
+  useEffect(() => {
+    loadEspecialidades();
+  }, []);
+
+  const loadEspecialidades = async () => {
+    setLoadingEspecialidades(true);
+    try {
+      const especialidadesData = await getAllEspecialidades();
+      if (especialidadesData) {
+        setEspecialidades(especialidadesData.filter(esp => esp.activa));
+      }
+    } catch (error) {
+      console.error('Error loading especialidades:', error);
+      showError('Error', 'No se pudieron cargar las especialidades');
+    } finally {
+      setLoadingEspecialidades(false);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<CreateProviderForm> = {};
@@ -99,6 +122,22 @@ const CreateProviderPage: React.FC = () => {
         [field]: undefined
       }));
     }
+  };
+
+  const handleAddEspecialidad = (especialidadId: string) => {
+    if (!formData.specialties.includes(especialidadId)) {
+      setFormData(prev => ({
+        ...prev,
+        specialties: [...prev.specialties, especialidadId]
+      }));
+    }
+  };
+
+  const handleRemoveEspecialidad = (especialidadId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specialties: prev.specialties.filter(id => id !== especialidadId)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -281,6 +320,100 @@ const CreateProviderPage: React.FC = () => {
                 error={errors.contact_email}
                 placeholder="contacto@proveedor.com"
               />
+            </div>
+          </div>
+
+          {/* Especialidades */}
+          <div className="bg-white dark:bg-darkmode-600 shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+                <FileText className="w-5 h-5 mr-2" />
+                Especialidades del Proveedor
+                <span className="ml-2 text-sm text-gray-500 dark:text-slate-400">(Opcional)</span>
+              </h3>
+            </div>
+            <div className="p-6">
+              {loadingEspecialidades ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-slate-400">Cargando especialidades...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Especialidades seleccionadas */}
+                  {formData.specialties.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                        Especialidades Seleccionadas
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.specialties.map(especialidadId => {
+                          const especialidad = especialidades.find(e => e.especialidadId === especialidadId);
+                          return especialidad ? (
+                            <span
+                              key={especialidadId}
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getSpecialtyColorClasses(especialidad.nombre)}`}
+                            >
+                              {renderSpecialtyIcon(especialidad.nombre)}
+                              {especialidad.nombre}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveEspecialidad(especialidadId)}
+                                disabled={loading}
+                                className="ml-2 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-opacity-20 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selector de especialidades */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                      Agregar Especialidad
+                    </label>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAddEspecialidad(e.target.value);
+                          e.target.value = ''; // Reset the select
+                        }
+                      }}
+                      disabled={loading || loadingEspecialidades}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-darkmode-400 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-darkmode-800 dark:text-white"
+                    >
+                      <option value="">Selecciona una especialidad para agregar</option>
+                      {especialidades
+                        .filter(esp => !formData.specialties.includes(esp.especialidadId))
+                        .map(especialidad => (
+                          <option key={especialidad.especialidadId} value={especialidad.especialidadId}>
+                            {especialidad.nombre}
+                            {especialidad.descripcion && ` - ${especialidad.descripcion}`}
+                          </option>
+                        ))
+                      }
+                    </select>
+                  </div>
+
+                  {especialidades.length === 0 && (
+                    <div className="text-center py-4 text-gray-500 dark:text-slate-400">
+                      <p>No hay especialidades disponibles</p>
+                    </div>
+                  )}
+
+                  <div className="text-sm text-gray-500 dark:text-slate-400">
+                    <p>
+                      <strong>Nota:</strong> Las especialidades ayudan a identificar qué tipo de servicios médicos 
+                      puede proveer este proveedor. Puedes seleccionar múltiples especialidades si es necesario.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

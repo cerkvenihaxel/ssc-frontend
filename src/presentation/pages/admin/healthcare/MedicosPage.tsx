@@ -20,6 +20,7 @@ import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
 import { ApiClient } from '../../../../infrastructure/http/ApiClient';
 import { HttpMedicoRepository, type Medico, type Especialidad } from '../../../../infrastructure/repositories/HttpMedicoRepository';
+import { getSpecialtyColorClasses, renderSpecialtyIcon } from '../../../../shared/utils/specialtyIcons';
 
 const MedicosPage: React.FC = () => {
   const [medicos, setMedicos] = useState<Medico[]>([]);
@@ -336,7 +337,8 @@ const MedicosPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        <span className={`inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full ${getSpecialtyColorClasses(getEspecialidadName(medico.especialidadId))}`}>
+                          {renderSpecialtyIcon(getEspecialidadName(medico.especialidadId))}
                           {getEspecialidadName(medico.especialidadId)}
                         </span>
                       </td>

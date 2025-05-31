@@ -7,6 +7,7 @@ import Input from '../../../../shared/components/ui/Input';
 import { ApiClient } from '../../../../infrastructure/http/ApiClient';
 import { HttpMedicoRepository, type Especialidad, type CreateMedicoRequest } from '../../../../infrastructure/repositories/HttpMedicoRepository';
 import { type ObraSocial } from '../../../../infrastructure/repositories/HttpObraSocialRepository';
+import { getSpecialtyColorClasses, renderSpecialtyIcon } from '../../../../shared/utils/specialtyIcons';
 
 const MedicoCreatePage: React.FC = () => {
   const navigate = useNavigate();
@@ -142,6 +143,19 @@ const MedicoCreatePage: React.FC = () => {
                       </option>
                     ))}
                   </select>
+                  
+                  {/* Mostrar especialidad seleccionada con icono */}
+                  {formData.especialidadId && (
+                    <div className="mt-2">
+                      <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Especialidad seleccionada:</span>
+                      <div className="mt-1">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSpecialtyColorClasses(especialidades.find(e => e.especialidadId === formData.especialidadId)?.nombre || '')}`}>
+                          {renderSpecialtyIcon(especialidades.find(e => e.especialidadId === formData.especialidadId)?.nombre || '')}
+                          {especialidades.find(e => e.especialidadId === formData.especialidadId)?.nombre || 'No encontrada'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -247,13 +261,15 @@ const MedicoCreatePage: React.FC = () => {
                   <h4 className="text-sm font-medium text-gray-700 dark:text-slate-300">Obras sociales seleccionadas:</h4>
                   {selectedObrasSociales.map((obraSocialId) => (
                     <div key={obraSocialId} className="flex items-center justify-between bg-gray-50 dark:bg-darkmode-700 p-3 rounded-lg">
-                      <span className="text-sm text-gray-900 dark:text-white">
+                      <span className="inline-flex items-center text-sm text-gray-900 dark:text-white">
+                        <Plus className="w-4 h-4 mr-2 text-green-600" />
                         {getObraSocialName(obraSocialId)}
                       </span>
                       <button
                         type="button"
                         onClick={() => removeObraSocial(obraSocialId)}
-                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                        title="Eliminar obra social"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

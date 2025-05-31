@@ -3,14 +3,15 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, User, Mail, Phone, Building, Calendar, 
   Shield, Edit, Trash2, UserCheck, UserX, MapPin,
-  CreditCard, Briefcase, Award, Stethoscope, Eye
+  CreditCard, Briefcase, Award, Eye, FileText, Plus, Stethoscope
 } from 'lucide-react';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import LoadingSpinner from '../../../../shared/components/ui/LoadingSpinner';
 import { useToast } from '../../../../shared/components/ui/ToastContainer';
 import { useAdmin } from '../../../hooks/useAdmin';
-import type { AdminUser } from '../../../../infrastructure/repositories/HttpAdminRepository';
+import { getSpecialtyIcon, getSpecialtyColorClasses, renderSpecialtyIcon } from '../../../../shared/utils/specialtyIcons';
+import type { AdminUser, Especialidad } from '../../../../infrastructure/repositories/HttpAdminRepository';
 
 interface ProviderDetails extends AdminUser {
   updated_at?: string;
@@ -25,36 +26,89 @@ interface ProviderDetails extends AdminUser {
     contact_phone: string;
     contact_email: string;
   };
+  // Especialidades directas del proveedor
+  specialties?: string[]; // IDs de especialidades
 }
 
 const ProviderDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showSuccess, showError, showWarning } = useToast();
-  const { getProviderById, updateProvider, deleteProvider, loading: adminLoading } = useAdmin();
+  const { getProviderById, updateProvider, deleteProvider, getAllEspecialidades, getProviderDetailsById, loading: adminLoading } = useAdmin();
 
   const [provider, setProvider] = useState<ProviderDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
 
   useEffect(() => {
     if (id) {
       loadProviderDetails();
+      loadEspecialidades();
     }
   }, [id]);
 
   const loadProviderDetails = async () => {
     setLoading(true);
     try {
-      const providerData = await getProviderById(id!);
-      if (providerData) {
+      // Intentar ambos endpoints para comparar
+      const [providerData, directProviderData] = await Promise.allSettled([
+        getProviderById(id!),
+        getProviderDetailsById(id!)
+      ]);
+
+      console.log('Admin user endpoint result:', providerData);
+      console.log('Direct provider endpoint result:', directProviderData);
+
+      // Usar los datos del endpoint que tenga mejor información
+      let finalProviderData = null;
+
+      if (providerData.status === 'fulfilled' && providerData.value) {
+        finalProviderData = providerData.value;
+        console.log('Using admin user endpoint data');
+      }
+
+      // Si el endpoint directo también funciona, combinar la información
+      if (directProviderData.status === 'fulfilled' && directProviderData.value) {
+        console.log('Direct provider data structure:', JSON.stringify(directProviderData.value, null, 2));
+        
+        if (finalProviderData) {
+          // Combinar ambas respuestas, dando prioridad a las especialidades del endpoint directo
+          finalProviderData = {
+            ...finalProviderData,
+            specialties: (directProviderData.value as any).specialties || (finalProviderData as any).specialties
+          };
+        } else {
+          finalProviderData = directProviderData.value;
+        }
+      }
+
+      if (finalProviderData) {
+        console.log('Provider data keys:', Object.keys(finalProviderData));
+        console.log('Specialties found:', (finalProviderData as any).specialties);
+      }
+      
+      if (finalProviderData) {
         // Adaptar los datos de AdminUser a ProviderDetails
         const providerDetails: ProviderDetails = {
-          ...providerData,
-          updated_at: providerData.created_at, // Fallback si no hay updated_at
+          ...finalProviderData,
+          updated_at: finalProviderData.created_at, // Fallback si no hay updated_at
           email_verified: false, // Valor por defecto
-          status: providerData.status || 'active'
+          status: finalProviderData.status || 'active',
+          // Especialidades del proveedor (directo o desde provider_info)
+          specialties: (finalProviderData as any).specialties || (finalProviderData as any).provider_info?.specialties || [],
+          // Intentar extraer provider_info de diferentes ubicaciones posibles
+          provider_info: (finalProviderData as any).provider_info || {
+            provider_name: (finalProviderData as any).provider_name || 'No especificado',
+            provider_type: (finalProviderData as any).provider_type || 'No especificado',
+            cuit: (finalProviderData as any).cuit || 'No especificado',
+            contact_name: (finalProviderData as any).contact_name || 'No especificado',
+            contact_phone: (finalProviderData as any).contact_phone || 'No especificado',
+            contact_email: (finalProviderData as any).contact_email || 'No especificado'
+          }
         };
+        console.log('Processed provider details:', providerDetails);
+        console.log('Provider specialties:', providerDetails.specialties);
         setProvider(providerDetails);
       }
     } catch (error) {
@@ -62,6 +116,17 @@ const ProviderDetailsPage: React.FC = () => {
       showError('Error', 'No se pudieron cargar los detalles del proveedor');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadEspecialidades = async () => {
+    try {
+      const especialidadesData = await getAllEspecialidades();
+      if (especialidadesData) {
+        setEspecialidades(especialidadesData);
+      }
+    } catch (error) {
+      console.error('Error loading especialidades:', error);
     }
   };
 
@@ -402,6 +467,72 @@ const ProviderDetailsPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Especialidades del Proveedor */}
+        <div className="bg-white dark:bg-darkmode-600 shadow rounded-lg p-6">
+          <div className="flex items-center mb-6">
+            <FileText className="w-5 h-5 text-gray-400 mr-2" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              Especialidades del Proveedor
+            </h3>
+          </div>
+
+          <div className="space-y-4">
+            {provider.specialties && provider.specialties.length > 0 ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  Especialidades Registradas ({provider.specialties.length})
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {provider.specialties.map(especialidadId => {
+                    const especialidad = especialidades.find(e => e.especialidadId === especialidadId);
+                    return especialidad ? (
+                      <span
+                        key={especialidadId}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getSpecialtyColorClasses(especialidad.nombre)}`}
+                      >
+                        {renderSpecialtyIcon(especialidad.nombre)}
+                        {especialidad.nombre}
+                      </span>
+                    ) : (
+                      <span
+                        key={especialidadId}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200"
+                      >
+                        Especialidad no encontrada (ID: {especialidadId})
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-slate-400 mt-2">
+                  <p>
+                    Las especialidades indican los tipos de servicios médicos que puede proveer este proveedor.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Stethoscope className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Sin especialidades asignadas
+                </h3>
+                <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+                  Este proveedor no tiene especialidades médicas registradas.
+                </p>
+                <div className="mt-4">
+                  <Button
+                    variant="outline-primary"
+                    onClick={() => navigate(`/admin/users/providers/${id}/edit`)}
+                    className="inline-flex items-center"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Especialidades
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Email Verification Status */}
         <div className="bg-white dark:bg-darkmode-600 shadow rounded-lg p-6">

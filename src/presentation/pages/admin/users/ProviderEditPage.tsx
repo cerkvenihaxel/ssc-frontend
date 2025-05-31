@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X, User, Mail, Building, Phone, CreditCard, MapPin } from 'lucide-react';
+import { ArrowLeft, Save, X, User, Mail, Building, Phone, CreditCard, MapPin, FileText, Plus, Stethoscope } from 'lucide-react';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import LoadingSpinner from '../../../../shared/components/ui/LoadingSpinner';
 import { useToast } from '../../../../shared/components/ui/ToastContainer';
 import { useAdmin } from '../../../hooks/useAdmin';
-import type { AdminUser, UpdateUserRequest } from '../../../../infrastructure/repositories/HttpAdminRepository';
+import { getSpecialtyColorClasses, renderSpecialtyIcon } from '../../../../shared/utils/specialtyIcons';
+import type { AdminUser, UpdateUserRequest, Especialidad } from '../../../../infrastructure/repositories/HttpAdminRepository';
 
 interface ProviderData extends AdminUser {
+  updated_at?: string;
+  last_login?: string;
+  email_verified?: boolean;
+  // Información específica de proveedor
   provider_info?: {
     provider_name: string;
     provider_type: string;
@@ -17,6 +22,8 @@ interface ProviderData extends AdminUser {
     contact_phone: string;
     contact_email: string;
   };
+  // Especialidades directas del proveedor
+  specialties?: string[]; // IDs de especialidades
 }
 
 interface EditFormData {
@@ -29,18 +36,21 @@ interface EditFormData {
   contact_name: string;
   contact_phone: string;
   contact_email: string;
+  specialties: string[]; // IDs de especialidades seleccionadas
 }
 
 const ProviderEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();
-  const { getProviderById, updateProvider } = useAdmin();
+  const { getProviderById, updateProvider, getAllEspecialidades } = useAdmin();
 
   const [provider, setProvider] = useState<ProviderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+  const [loadingEspecialidades, setLoadingEspecialidades] = useState(false);
 
   const [formData, setFormData] = useState<EditFormData>({
     email: '',
@@ -51,7 +61,8 @@ const ProviderEditPage: React.FC = () => {
     cuit: '',
     contact_name: '',
     contact_phone: '',
-    contact_email: ''
+    contact_email: '',
+    specialties: []
   });
 
   const [originalData, setOriginalData] = useState<EditFormData>({
@@ -63,12 +74,14 @@ const ProviderEditPage: React.FC = () => {
     cuit: '',
     contact_name: '',
     contact_phone: '',
-    contact_email: ''
+    contact_email: '',
+    specialties: []
   });
 
   useEffect(() => {
     if (id) {
       loadProviderData();
+      loadEspecialidades();
     }
   }, [id]);
 
@@ -83,7 +96,11 @@ const ProviderEditPage: React.FC = () => {
       formData.cuit !== originalData.cuit ||
       formData.contact_name !== originalData.contact_name ||
       formData.contact_phone !== originalData.contact_phone ||
-      formData.contact_email !== originalData.contact_email;
+      formData.contact_email !== originalData.contact_email ||
+      // Comparación mejorada de especialidades
+      formData.specialties.length !== originalData.specialties.length ||
+      formData.specialties.some((id, index) => id !== originalData.specialties[index]) ||
+      !formData.specialties.every(id => originalData.specialties.includes(id));
     
     setHasChanges(!!dataChanged);
   }, [formData, originalData]);
@@ -92,21 +109,38 @@ const ProviderEditPage: React.FC = () => {
     setLoading(true);
     try {
       const providerData = await getProviderById(id!);
+      console.log('Raw provider data:', providerData);
       if (providerData) {
         const providerWithInfo = providerData as ProviderData;
+        console.log('Provider with info:', providerWithInfo);
+        console.log('Provider specialties:', (providerData as any).specialties);
+        
+        // Extraer especialidades directamente del proveedor
+        const extractedSpecialties = (providerData as any).specialties || [];
+        
         const initialData: EditFormData = {
           email: providerWithInfo.email || '',
           nombre: providerWithInfo.nombre || '',
           status: (providerWithInfo.status || 'active') as 'active' | 'inactive',
-          provider_name: providerWithInfo.provider_info?.provider_name || '',
-          provider_type: providerWithInfo.provider_info?.provider_type || '',
-          cuit: providerWithInfo.provider_info?.cuit || '',
-          contact_name: providerWithInfo.provider_info?.contact_name || '',
-          contact_phone: providerWithInfo.provider_info?.contact_phone || '',
-          contact_email: providerWithInfo.provider_info?.contact_email || ''
+          provider_name: providerWithInfo.provider_info?.provider_name || (providerData as any).provider_name || '',
+          provider_type: providerWithInfo.provider_info?.provider_type || (providerData as any).provider_type || '',
+          cuit: providerWithInfo.provider_info?.cuit || (providerData as any).cuit || '',
+          contact_name: providerWithInfo.provider_info?.contact_name || (providerData as any).contact_name || '',
+          contact_phone: providerWithInfo.provider_info?.contact_phone || (providerData as any).contact_phone || '',
+          contact_email: providerWithInfo.provider_info?.contact_email || (providerData as any).contact_email || '',
+          specialties: extractedSpecialties
         };
         
-        setProvider(providerWithInfo);
+        console.log('Initial form data:', initialData);
+        console.log('Extracted specialties:', extractedSpecialties);
+        
+        // Crear también el proveedor con las especialidades
+        const providerWithSpecialties: ProviderData = {
+          ...providerWithInfo,
+          specialties: extractedSpecialties
+        };
+        
+        setProvider(providerWithSpecialties);
         setFormData(initialData);
         setOriginalData(initialData);
       }
@@ -119,10 +153,41 @@ const ProviderEditPage: React.FC = () => {
     }
   };
 
+  const loadEspecialidades = async () => {
+    setLoadingEspecialidades(true);
+    try {
+      const especialidadesData = await getAllEspecialidades();
+      if (especialidadesData) {
+        setEspecialidades(especialidadesData.filter(esp => esp.activa));
+      }
+    } catch (error) {
+      console.error('Error loading especialidades:', error);
+      showError('Error', 'No se pudieron cargar las especialidades');
+    } finally {
+      setLoadingEspecialidades(false);
+    }
+  };
+
   const handleInputChange = (field: keyof EditFormData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
+    }));
+  };
+
+  const handleAddEspecialidad = (especialidadId: string) => {
+    if (!formData.specialties.includes(especialidadId)) {
+      setFormData(prev => ({
+        ...prev,
+        specialties: [...prev.specialties, especialidadId]
+      }));
+    }
+  };
+
+  const handleRemoveEspecialidad = (especialidadId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specialties: prev.specialties.filter(id => id !== especialidadId)
     }));
   };
 
@@ -168,6 +233,20 @@ const ProviderEditPage: React.FC = () => {
       if (formData.contact_email !== (originalData?.contact_email || '')) {
         updateData.contact_email = formData.contact_email;
       }
+      
+      // Verificar cambios en especialidades
+      const originalSpecialties = originalData?.specialties || [];
+      const currentSpecialties = formData.specialties;
+      const specialtiesChanged = 
+        currentSpecialties.length !== originalSpecialties.length ||
+        !currentSpecialties.every(id => originalSpecialties.includes(id)) ||
+        !originalSpecialties.every(id => currentSpecialties.includes(id));
+      
+      if (specialtiesChanged) {
+        updateData.specialties = formData.specialties;
+      }
+
+      console.log('Sending update data:', updateData);
 
       const result = await updateProvider(id!, updateData);
       if (result) {
@@ -494,6 +573,101 @@ const ProviderEditPage: React.FC = () => {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Especialidades */}
+          <div className="bg-white dark:bg-darkmode-600 shadow rounded-lg p-6">
+            <div className="flex items-center mb-6">
+              <FileText className="w-5 h-5 text-gray-400 mr-2" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                Especialidades del Proveedor
+              </h3>
+              <span className="ml-2 text-sm text-gray-500 dark:text-slate-400">(Opcional)</span>
+            </div>
+
+            {loadingEspecialidades ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                <span className="ml-2 text-sm text-gray-600 dark:text-slate-400">Cargando especialidades...</span>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Especialidades seleccionadas */}
+                {formData.specialties.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                      Especialidades Seleccionadas
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.specialties.map(especialidadId => {
+                        const especialidad = especialidades.find(e => e.especialidadId === especialidadId);
+                        return especialidad ? (
+                          <span
+                            key={especialidadId}
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getSpecialtyColorClasses(especialidad.nombre)}`}
+                          >
+                            {renderSpecialtyIcon(especialidad.nombre)}
+                            {especialidad.nombre}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveEspecialidad(especialidadId)}
+                              disabled={saving}
+                              className="ml-2 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-opacity-20 transition-colors"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Selector de especialidades */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    Agregar Especialidad
+                  </label>
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        handleAddEspecialidad(e.target.value);
+                        e.target.value = ''; // Reset the select
+                      }
+                    }}
+                    disabled={saving || loadingEspecialidades}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm 
+                             bg-white dark:bg-darkmode-800 text-gray-900 dark:text-white
+                             focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  >
+                    <option value="">Selecciona una especialidad para agregar</option>
+                    {especialidades
+                      .filter(esp => !formData.specialties.includes(esp.especialidadId))
+                      .map(especialidad => (
+                        <option key={especialidad.especialidadId} value={especialidad.especialidadId}>
+                          {especialidad.nombre}
+                          {especialidad.descripcion && ` - ${especialidad.descripcion}`}
+                        </option>
+                      ))
+                    }
+                  </select>
+                </div>
+
+                {especialidades.length === 0 && (
+                  <div className="text-center py-4 text-gray-500 dark:text-slate-400">
+                    <p>No hay especialidades disponibles</p>
+                  </div>
+                )}
+
+                <div className="text-sm text-gray-500 dark:text-slate-400">
+                  <p>
+                    <strong>Nota:</strong> Las especialidades ayudan a identificar qué tipo de servicios médicos 
+                    puede proveer este proveedor. Puedes seleccionar múltiples especialidades si es necesario.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </form>
       </div>

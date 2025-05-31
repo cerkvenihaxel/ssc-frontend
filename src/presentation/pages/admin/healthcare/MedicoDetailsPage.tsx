@@ -6,6 +6,7 @@ import Button from '../../../../shared/components/ui/Button';
 import { ApiClient } from '../../../../infrastructure/http/ApiClient';
 import { HttpMedicoRepository, type Medico, type Especialidad } from '../../../../infrastructure/repositories/HttpMedicoRepository';
 import { type ObraSocial } from '../../../../infrastructure/repositories/HttpObraSocialRepository';
+import { getSpecialtyColorClasses, renderSpecialtyIcon } from '../../../../shared/utils/specialtyIcons';
 
 const MedicoDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -151,9 +152,19 @@ const MedicoDetailsPage: React.FC = () => {
                 </div>
               )}
               <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">{fullName}</h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400">
-                {especialidad?.nombre || 'Especialidad no especificada'}
-              </p>
+              <div className="flex justify-center mt-2">
+                {especialidad?.nombre ? (
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSpecialtyColorClasses(especialidad.nombre)}`}>
+                    {renderSpecialtyIcon(especialidad.nombre)}
+                    {especialidad.nombre}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200">
+                    <Stethoscope className="w-3 h-3 mr-1" />
+                    Especialidad no especificada
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="mt-6 space-y-3">
@@ -180,8 +191,18 @@ const MedicoDetailsPage: React.FC = () => {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Especialidad</dt>
-                <dd className="text-sm text-gray-900 dark:text-white">
-                  {especialidad?.nombre || 'No especificada'}
+                <dd className="mt-1">
+                  {especialidad?.nombre ? (
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getSpecialtyColorClasses(especialidad.nombre)}`}>
+                      {renderSpecialtyIcon(especialidad.nombre)}
+                      {especialidad.nombre}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-200">
+                      <Stethoscope className="w-3 h-3 mr-1" />
+                      No especificada
+                    </span>
+                  )}
                 </dd>
               </div>
               <div>

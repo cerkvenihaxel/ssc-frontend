@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Save, User, Mail, Building, Phone, FileText, Shield } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Save, User, Mail, Building, Phone, FileText, Shield, Plus, X, Stethoscope } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
 import { useToast } from '../../../../shared/components/ui/ToastContainer';
 import { useAdmin } from '../../../hooks/useAdmin';
+import { getSpecialtyColorClasses, renderSpecialtyIcon } from '../../../../shared/utils/specialtyIcons';
+import type { Especialidad } from '../../../../infrastructure/repositories/HttpAdminRepository';
 
 interface CreateUserForm {
   email: string;
@@ -18,6 +20,7 @@ interface CreateUserForm {
   contact_name?: string;
   contact_phone?: string;
   contact_email?: string;
+  especialidades?: string[]; // IDs de especialidades seleccionadas
   // Campos específicos para auditores
   first_name?: string;
   last_name?: string;
@@ -35,7 +38,7 @@ interface CreateUserForm {
 const CreateUserPage: React.FC = () => {
   const navigate = useNavigate();
   const { showSuccess, showError, showWarning } = useToast();
-  const { createProvider, createEffector, createAuditor, loading: adminLoading, error: adminError } = useAdmin();
+  const { createProvider, createEffector, createAuditor, getAllEspecialidades, loading: adminLoading, error: adminError } = useAdmin();
   
   const [formData, setFormData] = useState<CreateUserForm>({
     email: '',
@@ -45,6 +48,8 @@ const CreateUserPage: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
+  const [loadingEspecialidades, setLoadingEspecialidades] = useState(false);
 
   const roles = [
     { id: '5', name: 'Administrador', description: 'Administrador del sistema' },
@@ -54,6 +59,27 @@ const CreateUserPage: React.FC = () => {
     { id: '2', name: 'Médico', description: 'Médico del sistema' },
     { id: '1', name: 'Afiliado', description: 'Afiliado del sistema' },
   ];
+
+  // Cargar especialidades al montar el componente
+  useEffect(() => {
+    loadEspecialidades();
+  }, []);
+
+  const loadEspecialidades = async () => {
+    setLoadingEspecialidades(true);
+    try {
+      const especialidadesData = await getAllEspecialidades();
+      // Filtrar solo las activas
+      if (especialidadesData) {
+        setEspecialidades(especialidadesData.filter(esp => esp.activa));
+      }
+    } catch (error) {
+      console.error('Error loading especialidades:', error);
+      showError('Error', 'No se pudieron cargar las especialidades');
+    } finally {
+      setLoadingEspecialidades(false);
+    }
+  };
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -159,6 +185,7 @@ const CreateUserPage: React.FC = () => {
             contact_name: formData.contact_name || formData.nombre,
             contact_phone: formData.contact_phone || '',
             contact_email: formData.contact_email || formData.email,
+            specialties: formData.especialidades || [],
             status: 'active'
           });
           break;
@@ -294,6 +321,29 @@ const CreateUserPage: React.FC = () => {
         }
       }
     }
+  };
+
+  const handleAddEspecialidad = (especialidadId: string) => {
+    if (!formData.especialidades) {
+      setFormData(prev => ({
+        ...prev,
+        especialidades: [especialidadId]
+      }));
+    } else if (!formData.especialidades.includes(especialidadId)) {
+      setFormData(prev => ({
+        ...prev,
+        especialidades: [...(prev.especialidades || []), especialidadId]
+      }));
+    }
+    setIsDirty(true);
+  };
+
+  const handleRemoveEspecialidad = (especialidadId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      especialidades: (prev.especialidades || []).filter(id => id !== especialidadId)
+    }));
+    setIsDirty(true);
   };
 
   const handleCancel = () => {
@@ -581,6 +631,101 @@ const CreateUserPage: React.FC = () => {
                   )}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Especialidades para Proveedor */}
+          {selectedRole?.name === 'Proveedor' && (
+            <div className="bg-white dark:bg-darkmode-600 shadow rounded-lg p-6">
+              <div className="flex items-center mb-6">
+                <FileText className="w-5 h-5 text-gray-400 mr-2" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                  Especialidades del Proveedor
+                </h3>
+                <span className="ml-2 text-sm text-gray-500 dark:text-slate-400">(Opcional)</span>
+              </div>
+
+              {loadingEspecialidades ? (
+                <div className="flex items-center justify-center py-4">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-500"></div>
+                  <span className="ml-2 text-sm text-gray-600 dark:text-slate-400">Cargando especialidades...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Especialidades seleccionadas */}
+                  {formData.especialidades && formData.especialidades.length > 0 && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                        Especialidades Seleccionadas
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {formData.especialidades.map(especialidadId => {
+                          const especialidad = especialidades.find(e => e.especialidadId === especialidadId);
+                          return especialidad ? (
+                            <span
+                              key={especialidadId}
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getSpecialtyColorClasses(especialidad.nombre)}`}
+                            >
+                              {renderSpecialtyIcon(especialidad.nombre)}
+                              {especialidad.nombre}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveEspecialidad(especialidadId)}
+                                disabled={loading}
+                                className="ml-2 inline-flex items-center justify-center w-4 h-4 rounded-full hover:bg-opacity-20 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selector de especialidades */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                      Agregar Especialidad
+                    </label>
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAddEspecialidad(e.target.value);
+                          e.target.value = ''; // Reset the select
+                        }
+                      }}
+                      disabled={loading || loadingEspecialidades}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-darkmode-400 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-darkmode-800 dark:text-white"
+                    >
+                      <option value="">Selecciona una especialidad para agregar</option>
+                      {especialidades
+                        .filter(esp => !(formData.especialidades || []).includes(esp.especialidadId))
+                        .map(especialidad => (
+                          <option key={especialidad.especialidadId} value={especialidad.especialidadId}>
+                            {especialidad.nombre}
+                            {especialidad.descripcion && ` - ${especialidad.descripcion}`}
+                          </option>
+                        ))
+                      }
+                    </select>
+                  </div>
+
+                  {especialidades.length === 0 && (
+                    <div className="text-center py-4 text-gray-500 dark:text-slate-400">
+                      <p>No hay especialidades disponibles</p>
+                    </div>
+                  )}
+
+                  <div className="text-sm text-gray-500 dark:text-slate-400">
+                    <p>
+                      <strong>Nota:</strong> Las especialidades ayudan a identificar qué tipo de servicios médicos 
+                      puede proveer este proveedor. Puedes seleccionar múltiples especialidades si es necesario.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

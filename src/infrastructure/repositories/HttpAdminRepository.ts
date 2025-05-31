@@ -160,6 +160,15 @@ export interface UpdateUserRequest {
   employee_id?: string;
   permissions?: string[];
   healthcare_providers?: string[];
+  provider_name?: string;
+  provider_type?: string;
+  cuit?: string;
+  contact_name?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  specialties?: string[];
+  effector_name?: string;
+  effector_type?: string;
 }
 
 export interface AdminUsersResponse {
@@ -248,6 +257,11 @@ export class HttpAdminRepository {
 
   async getProviderById(id: string): Promise<AdminUser> {
     return this.apiClient.get<AdminUser>(`/v1/admin/users/providers/${id}`);
+  }
+
+  // Método para obtener información completa del proveedor incluyendo especialidades
+  async getProviderDetailsById(id: string): Promise<any> {
+    return this.apiClient.get<any>(`/v1/proveedores/${id}`);
   }
 
   async updateProvider(id: string, data: UpdateUserRequest): Promise<AdminUser> {
