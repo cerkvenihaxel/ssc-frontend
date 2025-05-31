@@ -273,6 +273,26 @@ const CreateUserPage: React.FC = () => {
           return;
         }
       }
+      if (selectedRole?.name === 'Efector') {
+        const shouldRedirect = window.confirm(
+          '¿Te gustaría usar el formulario especializado para crear efectores? ' +
+          'Tiene campos específicos para la información del efector.'
+        );
+        if (shouldRedirect) {
+          navigate('/admin/users/effectors/create');
+          return;
+        }
+      }
+      if (selectedRole?.name === 'Médico') {
+        const shouldRedirect = window.confirm(
+          '¿Te gustaría usar el formulario especializado para crear médicos? ' +
+          'Tiene campos específicos para la información médica.'
+        );
+        if (shouldRedirect) {
+          navigate('/admin/healthcare/medicos/create');
+          return;
+        }
+      }
     }
   };
 
@@ -324,7 +344,7 @@ const CreateUserPage: React.FC = () => {
               </h3>
               <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
                 <p>
-                  Para roles específicos como Auditor o Proveedor, recomendamos usar los formularios especializados 
+                  Para roles específicos como Auditor, Proveedor, Efector o Médico, recomendamos usar los formularios especializados 
                   que incluyen campos adicionales específicos para cada tipo de usuario.
                 </p>
                 <div className="mt-2 space-x-2">
@@ -342,6 +362,22 @@ const CreateUserPage: React.FC = () => {
                     className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
                   >
                     Crear Proveedor
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/admin/users/effectors/create')}
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
+                  >
+                    Crear Efector
+                  </button>
+                  <span>•</span>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/admin/healthcare/medicos/create')}
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 underline"
+                  >
+                    Crear Médico
                   </button>
                 </div>
               </div>
