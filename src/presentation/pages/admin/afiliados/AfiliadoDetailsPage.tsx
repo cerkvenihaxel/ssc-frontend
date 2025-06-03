@@ -66,9 +66,11 @@ const AfiliadoDetailsPage: React.FC = () => {
 
   useEffect(() => {
     const loadAfiliado = async () => {
+      if (!id) return;
       try {
         setLoading(true);
         
+        // El obfuscatedApiClient se encarga automáticamente de desofuscar el ID
         console.log('🔍 Cargando detalles del afiliado con ID:', id);
         const data = await obfuscatedApiClient.get<Afiliado>(`/v1/afiliados/${id}`);
         console.log('👤 Detalles del afiliado cargados:', data);
@@ -119,7 +121,7 @@ const AfiliadoDetailsPage: React.FC = () => {
           </p>
           <div className="mt-6">
             <Button
-              onClick={() => navigate('/admin/healthcare/afiliados')}
+              onClick={() => navigate('/admin/afiliados')}
               variant="outline-primary"
             >
               Volver a la lista
@@ -131,7 +133,7 @@ const AfiliadoDetailsPage: React.FC = () => {
   }
 
   const handleEditClick = () => {
-    navigate(`/admin/healthcare/afiliados/${id}/edit`);
+    navigate(`/admin/afiliados/${id}/edit`);
   };
 
   return (
@@ -141,7 +143,7 @@ const AfiliadoDetailsPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button 
-              onClick={() => navigate('/admin/healthcare/afiliados')}
+              onClick={() => navigate('/admin/afiliados')}
               className="mr-4 p-2 hover:bg-gray-100 dark:hover:bg-darkmode-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-slate-400" />
@@ -193,7 +195,7 @@ const AfiliadoDetailsPage: React.FC = () => {
                             ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                             : afiliado.gender === 'F'
                             ? 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
-                            : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                         }`}>
                           {afiliado.gender === 'M' ? 'Masculino' : afiliado.gender === 'F' ? 'Femenino' : 'Otro'}
                         </span>
@@ -201,185 +203,192 @@ const AfiliadoDetailsPage: React.FC = () => {
                     </div>
                   </dl>
                 </div>
-                
+
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Información de Contacto</h3>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Documentación</h3>
                   <dl className="space-y-3">
-                    <div className="flex items-start">
-                      <Mail className="w-4 h-4 text-gray-400 dark:text-slate-500 mt-0.5 mr-2" />
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Email</dt>
-                        <dd className="text-sm text-gray-900 dark:text-white">{afiliado.email}</dd>
-                      </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Tipo de documento</dt>
+                      <dd className="text-sm text-gray-900 dark:text-white">{afiliado.documentType}</dd>
                     </div>
-                    <div className="flex items-start">
-                      <Phone className="w-4 h-4 text-gray-400 dark:text-slate-500 mt-0.5 mr-2" />
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Teléfono</dt>
-                        <dd className="text-sm text-gray-900 dark:text-white">{afiliado.phone || 'No especificado'}</dd>
-                      </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Número de documento</dt>
+                      <dd className="text-sm text-gray-900 dark:text-white font-mono">{afiliado.documentNumber}</dd>
                     </div>
-                    <div className="flex items-start">
-                      <Calendar className="w-4 h-4 text-gray-400 dark:text-slate-500 mt-0.5 mr-2" />
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Fecha de nacimiento</dt>
-                        <dd className="text-sm text-gray-900 dark:text-white">
-                          {formatDateDisplay(afiliado.birthDate)} 
-                          <span className="text-gray-500 dark:text-slate-400 ml-2">({calculateAge(afiliado.birthDate)} años)</span>
-                        </dd>
-                      </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">País de emisión</dt>
+                      <dd className="text-sm text-gray-900 dark:text-white">{afiliado.documentCountry}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Nacionalidad</dt>
+                      <dd className="text-sm text-gray-900 dark:text-white">{afiliado.nationality}</dd>
                     </div>
                   </dl>
                 </div>
               </div>
+
+              <div className="mt-8">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Información de Nacimiento</h3>
+                <dl className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Fecha de nacimiento</dt>
+                    <dd className="text-sm text-gray-900 dark:text-white flex items-center">
+                      <Calendar className="w-4 h-4 mr-2 text-gray-400" />
+                      {formatDateDisplay(afiliado.birthDate)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Edad</dt>
+                    <dd className="text-sm text-gray-900 dark:text-white">{calculateAge(afiliado.birthDate)} años</dd>
+                  </div>
+                </dl>
+              </div>
+
+              {afiliado.occupation && (
+                <div className="mt-8">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Información Laboral</h3>
+                  <dl>
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Ocupación</dt>
+                      <dd className="text-sm text-gray-900 dark:text-white">{afiliado.occupation}</dd>
+                    </div>
+                  </dl>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Card de Estado */}
+          {/* Panel lateral */}
           <div className="space-y-6">
-            <div className="bg-white dark:bg-darkmode-600 rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white">Estado del Afiliado</h2>
-              </div>
-              
-              <div className="p-6">
-                <div className="text-center">
-                  <span className={`inline-flex px-4 py-2 text-sm font-medium rounded-full ${
-                    afiliado.affiliateStatus.toLowerCase() === 'active'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                      : afiliado.affiliateStatus.toLowerCase() === 'suspended'
-                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                      : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                  }`}>
-                    {afiliado.affiliateStatus.toLowerCase() === 'active' ? 'Activo' : afiliado.affiliateStatus.toLowerCase() === 'suspended' ? 'Suspendido' : 'Inactivo'}
-                  </span>
-                </div>
-                
-                <div className="mt-6 space-y-3">
-                  <div>
-                    <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Fecha de alta</dt>
-                    <dd className="text-sm text-gray-900 dark:text-white">
-                      {formatDateDisplay(afiliado.creationDate)}
-                    </dd>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card de Datos Bancarios */}
-            <div className="bg-white dark:bg-darkmode-600 rounded-lg shadow">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
-                <div className="flex items-center">
-                  <CreditCard className="w-6 h-6 text-gray-400 dark:text-slate-500 mr-3" />
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Datos Bancarios del Afiliado</h2>
-                </div>
-              </div>
-              
-              <div className="p-6">
-                {afiliado.cvu ? (
-                  <div className="text-center">
-                    <div className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-2">CVU</div>
-                    <div className="bg-gray-50 dark:bg-darkmode-700 rounded-lg p-3">
-                      <div className="text-sm text-gray-900 dark:text-white font-mono">{afiliado.cvu}</div>
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
-                      Clave Virtual Uniforme para transferencias
-                    </p>
-                  </div>
-                ) : (
-                  <div className="text-center py-4">
-                    <CreditCard className="mx-auto h-8 w-8 text-gray-400 dark:text-slate-500" />
-                    <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
-                      No hay datos bancarios registrados
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Card de Obras Sociales */}
+            {/* Estado del afiliado */}
             <div className="bg-white dark:bg-darkmode-600 rounded-lg shadow">
               <div className="px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
                 <div className="flex items-center">
                   <Shield className="w-6 h-6 text-gray-400 dark:text-slate-500 mr-3" />
-                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Obras Sociales</h2>
+                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Estado</h2>
                 </div>
               </div>
-              
               <div className="p-6">
-                {(!afiliado.healthcareProviders || afiliado.healthcareProviders.length === 0) ? (
-                  <div className="text-center py-4">
-                    <Shield className="mx-auto h-8 w-8 text-gray-400 dark:text-slate-500" />
-                    <p className="mt-2 text-sm text-gray-500 dark:text-slate-400">
-                      No tiene obras sociales asociadas
-                    </p>
+                <div className="space-y-4">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Estado actual</dt>
+                    <dd className="mt-1">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        afiliado.affiliateStatus === 'active' || afiliado.affiliateStatus === 'ACTIVE'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      }`}>
+                        {afiliado.affiliateStatus === 'active' || afiliado.affiliateStatus === 'ACTIVE' ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </dd>
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    {afiliado.healthcareProviders.map((obra) => (
-                      <div key={obra.healthcareProviderId} className="border border-gray-200 dark:border-darkmode-700 rounded-lg p-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-medium text-gray-900 dark:text-white">{obra.name}</h4>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Fecha de creación</dt>
+                    <dd className="text-sm text-gray-900 dark:text-white">{formatDateDisplay(afiliado.creationDate)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Última actualización</dt>
+                    <dd className="text-sm text-gray-900 dark:text-white">{formatDateDisplay(afiliado.lastUpdate)}</dd>
+                  </div>
+                  {afiliado.cvu && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">CVU</dt>
+                      <dd className="text-sm text-gray-900 dark:text-white font-mono">{afiliado.cvu}</dd>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Información de contacto */}
+            <div className="bg-white dark:bg-darkmode-600 rounded-lg shadow">
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
+                <div className="flex items-center">
+                  <Phone className="w-6 h-6 text-gray-400 dark:text-slate-500 mr-3" />
+                  <h2 className="text-lg font-medium text-gray-900 dark:text-white">Contacto</h2>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Email</dt>
+                    <dd className="text-sm text-gray-900 dark:text-white flex items-center">
+                      <Mail className="w-4 h-4 mr-2 text-gray-400" />
+                      <a 
+                        href={`mailto:${afiliado.email}`}
+                        className="hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        {afiliado.email}
+                      </a>
+                    </dd>
+                  </div>
+                  {afiliado.phone && (
+                    <div>
+                      <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Teléfono</dt>
+                      <dd className="text-sm text-gray-900 dark:text-white flex items-center">
+                        <Phone className="w-4 h-4 mr-2 text-gray-400" />
+                        <a 
+                          href={`tel:${afiliado.phone}`}
+                          className="hover:text-blue-600 dark:hover:text-blue-400"
+                        >
+                          {afiliado.phone}
+                        </a>
+                      </dd>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Obras sociales */}
+            {afiliado.healthcareProviders && afiliado.healthcareProviders.length > 0 && (
+              <div className="bg-white dark:bg-darkmode-600 rounded-lg shadow">
+                <div className="px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
+                  <div className="flex items-center">
+                    <Building2 className="w-6 h-6 text-gray-400 dark:text-slate-500 mr-3" />
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-white">Obras Sociales</h2>
+                  </div>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-4">
+                    {afiliado.healthcareProviders.map((obraSocial, index) => (
+                      <div key={index} className="border border-gray-200 dark:border-darkmode-400 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-medium text-gray-900 dark:text-white">{obraSocial.name}</h4>
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            isObraSocialActive(obra.status)
+                            isObraSocialActive(obraSocial.status)
                               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                               : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
                           }`}>
-                            {isObraSocialActive(obra.status) ? 'Activa' : 'Inactiva'}
+                            {isObraSocialActive(obraSocial.status) ? 'Activa' : 'Inactiva'}
                           </span>
                         </div>
-                        <div className="mt-2 space-y-1">
-                          {obra.contactPhone && (
-                            <div className="flex items-center text-xs text-gray-500 dark:text-slate-400">
-                              <Phone className="w-3 h-3 mr-1" />
-                              {obra.contactPhone}
+                        <div className="space-y-2 text-sm text-gray-600 dark:text-slate-400">
+                          {obraSocial.contactPhone && (
+                            <div className="flex items-center">
+                              <Phone className="w-4 h-4 mr-2" />
+                              {obraSocial.contactPhone}
                             </div>
                           )}
-                          {obra.contactEmail && (
-                            <div className="flex items-center text-xs text-gray-500 dark:text-slate-400">
-                              <Mail className="w-3 h-3 mr-1" />
-                              {obra.contactEmail}
+                          {obraSocial.contactEmail && (
+                            <div className="flex items-center">
+                              <Mail className="w-4 h-4 mr-2" />
+                              {obraSocial.contactEmail}
                             </div>
                           )}
-                          {obra.address && (
-                            <div className="flex items-start text-xs text-gray-500 dark:text-slate-400">
-                              <MapPin className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                              <span className="break-words">{obra.address}</span>
+                          {obraSocial.address && (
+                            <div className="flex items-center">
+                              <MapPin className="w-4 h-4 mr-2" />
+                              {obraSocial.address}
                             </div>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Información del Sistema */}
-        <div className="bg-white dark:bg-darkmode-600 rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
-            <h2 className="text-lg font-medium text-gray-900 dark:text-white">Información del Sistema</h2>
-          </div>
-          
-          <div className="p-6">
-            <dl className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">ID del afiliado</dt>
-                <dd className="text-sm text-gray-900 dark:text-white font-mono">{afiliado.id}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Fecha de alta en sistema</dt>
-                <dd className="text-sm text-gray-900 dark:text-white">
-                  {formatDateDisplay(afiliado.creationDate)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500 dark:text-slate-400">Estado actual</dt>
-                <dd className="text-sm text-gray-900 dark:text-white">{afiliado.affiliateStatus}</dd>
-              </div>
-            </dl>
+            )}
           </div>
         </div>
       </div>

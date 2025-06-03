@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Loader } from 'lucide-react';
+import { ArrowLeft, Save, Loader, Plus, X } from 'lucide-react';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
 import DatePicker from '../../../../shared/components/ui/DatePicker';
+import { useObfuscation } from '../../../../shared/contexts/ObfuscationContext';
 
 interface Afiliado {
   id: string;
@@ -53,6 +54,7 @@ const formatDateForAPI = (displayDate: string): string => {
 const AfiliadoEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { obfuscatedApiClient } = useObfuscation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadingObrasSociales, setLoadingObrasSociales] = useState(true);
@@ -84,25 +86,12 @@ const AfiliadoEditPage: React.FC = () => {
   useEffect(() => {
     const loadObrasSociales = async () => {
       try {
-        // Primero intentar con autenticación
-        let response = await fetch('/api/v1/obras-sociales', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
-        });
-        
-        // Si falla la autenticación, usar endpoint temporal
-        if (!response.ok && response.status === 401) {
-          console.log('Usando endpoint temporal sin autenticación para obras sociales');
-          response = await fetch('/api/v1/obras-sociales/test');
-        }
-        
-        if (response.ok) {
-          const data = await response.json();
-          setObrasSociales(data.filter((obra: ObraSocial) => 
-            isObraSocialActive(obra)
-          ));
-        }
+        console.log('🏥 Cargando obras sociales...');
+        const data = await obfuscatedApiClient.get<ObraSocial[]>('/v1/obras-sociales');
+        console.log('📋 Obras sociales cargadas:', data);
+        setObrasSociales(data.filter((obra: ObraSocial) => 
+          isObraSocialActive(obra)
+        ));
       } catch (error) {
         console.error('Error loading obras sociales:', error);
       } finally {
@@ -111,30 +100,15 @@ const AfiliadoEditPage: React.FC = () => {
     };
 
     loadObrasSociales();
-  }, []);
+  }, [obfuscatedApiClient]);
 
   useEffect(() => {
     const loadAfiliado = async () => {
-      if (!id) return;
       try {
-        // Primero intentar con autenticación
-        let response = await fetch(`/api/v1/afiliados/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
-        });
+        console.log('🔍 Cargando afiliado con ID:', id);
+        const data = await obfuscatedApiClient.get<Afiliado>(`/v1/afiliados/${id}`);
+        console.log('👤 Afiliado cargado:', data);
         
-        // Si falla la autenticación, usar endpoint temporal
-        if (!response.ok && response.status === 401) {
-          console.log('Usando endpoint temporal sin autenticación para afiliado');
-          response = await fetch(`/api/v1/afiliados/test/${id}`);
-        }
-        
-        if (!response.ok) {
-          throw new Error('Error al cargar el afiliado');
-        }
-        
-        const data: Afiliado = await response.json();
         setFormData({
           affiliateNumber: data.affiliateNumber,
           cuil: data.cuil,
@@ -163,7 +137,7 @@ const AfiliadoEditPage: React.FC = () => {
     };
 
     loadAfiliado();
-  }, [id]);
+  }, [id, obfuscatedApiClient]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,18 +152,9 @@ const AfiliadoEditPage: React.FC = () => {
         healthcareProviderIds: selectedObrasSociales
       };
       
-      const response = await fetch(`/api/v1/afiliados/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al actualizar el afiliado');
-      }
+      console.log('💾 Actualizando afiliado:', payload);
+      await obfuscatedApiClient.put(`/v1/afiliados/${id}`, payload);
+      console.log('✅ Afiliado actualizado exitosamente');
 
       navigate('/admin/healthcare/afiliados');
     } catch (error) {

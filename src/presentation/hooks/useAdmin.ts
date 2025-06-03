@@ -1,14 +1,17 @@
 import { useState, useCallback } from 'react';
 import { HttpAdminRepository } from '../../infrastructure/repositories/HttpAdminRepository';
 import type { AdminUser, AdminUserStats, AdminProvider, AdminAuditor, AdminEffector, CreateProviderRequest, CreateEffectorRequest, CreateAuditorRequest, UpdateUserRequest, ProvidersResponse, EffectorsResponse, AuditorsResponse, Especialidad } from '../../infrastructure/repositories/HttpAdminRepository';
-import { ApiClient } from '../../infrastructure/http/ApiClient';
-
-const apiClient = new ApiClient();
-const adminRepository = new HttpAdminRepository(apiClient);
+import { useObfuscation } from '../../shared/contexts/ObfuscationContext';
 
 export const useAdmin = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Use the obfuscated API client from context
+  const { obfuscatedApiClient } = useObfuscation();
+  
+  // Create the repository with the obfuscated client (since ObfuscatedApiClient extends ApiClient interface)
+  const adminRepository = new HttpAdminRepository(obfuscatedApiClient as any);
 
   const handleRequest = useCallback(async <T>(
     request: () => Promise<T>
@@ -25,133 +28,133 @@ export const useAdmin = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [obfuscatedApiClient]);
 
   // Usuarios
   const getAllUsers = useCallback(async (page: number = 1, limit: number = 10, role?: string) => {
     return handleRequest(() => adminRepository.getAllUsers(page, limit, role));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const getUserStats = useCallback(async () => {
     return handleRequest(() => adminRepository.getUserStats());
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const getUserById = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.getUserById(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const updateUser = useCallback(async (id: string, data: UpdateUserRequest) => {
     return handleRequest(() => adminRepository.updateUser(id, data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const updateUserPermissions = useCallback(async (id: string, permissions: string[]) => {
     return handleRequest(() => adminRepository.updateUserPermissions(id, permissions));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const bulkUpdateUsers = useCallback(async (userIds: string[], updates: Partial<UpdateUserRequest>) => {
     return handleRequest(() => adminRepository.bulkUpdateUsers(userIds, updates));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const deleteUser = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.deleteUser(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   // Proveedores
   const getAllProviders = useCallback(async () => {
     return handleRequest(() => adminRepository.getAllProviders());
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const getProviderById = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.getProviderById(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const getProviderDetailsById = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.getProviderDetailsById(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const updateProvider = useCallback(async (id: string, data: UpdateUserRequest) => {
     return handleRequest(() => adminRepository.updateProvider(id, data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const deleteProvider = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.deleteProvider(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const createProvider = useCallback(async (data: CreateProviderRequest) => {
     return handleRequest(() => adminRepository.createProvider(data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   // Efectores
   const getAllEffectors = useCallback(async (page: number = 1, limit: number = 10) => {
     return handleRequest(() => adminRepository.getAllEffectors(page, limit));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const getEffectorById = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.getEffectorById(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const createEffector = useCallback(async (data: CreateEffectorRequest) => {
     return handleRequest(() => adminRepository.createEffector(data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const updateEffector = useCallback(async (id: string, data: UpdateUserRequest) => {
     return handleRequest(() => adminRepository.updateEffector(id, data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const deleteEffector = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.deleteEffector(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   // Auditores
   const getAllAuditors = useCallback(async (page: number = 1, limit: number = 10) => {
     return handleRequest(() => adminRepository.getAllAuditors(page, limit));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const getAuditorById = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.getAuditorById(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const createAuditor = useCallback(async (data: CreateAuditorRequest) => {
     return handleRequest(() => adminRepository.createAuditor(data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const updateAuditor = useCallback(async (id: string, data: UpdateUserRequest) => {
     return handleRequest(() => adminRepository.updateAuditor(id, data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const deleteAuditor = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.deleteAuditor(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   // ==================== ESPECIALIDADES ====================
 
   const getAllEspecialidades = useCallback(async () => {
     return handleRequest(() => adminRepository.getAllEspecialidades());
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const getEspecialidadById = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.getEspecialidadById(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const createEspecialidad = useCallback(async (data: Omit<Especialidad, 'especialidadId' | 'fechaCreacion' | 'fechaActualizacion'>) => {
     return handleRequest(() => adminRepository.createEspecialidad(data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const updateEspecialidad = useCallback(async (id: string, data: Partial<Omit<Especialidad, 'especialidadId' | 'fechaCreacion' | 'fechaActualizacion'>>) => {
     return handleRequest(() => adminRepository.updateEspecialidad(id, data));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const activateEspecialidad = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.activateEspecialidad(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const deactivateEspecialidad = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.deactivateEspecialidad(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   const deleteEspecialidad = useCallback(async (id: string) => {
     return handleRequest(() => adminRepository.deleteEspecialidad(id));
-  }, [handleRequest]);
+  }, [handleRequest, adminRepository]);
 
   return {
     loading,

@@ -9,7 +9,7 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://ssc-api:3000',
+        target: process.env.NODE_ENV === 'production' ? 'http://ssc-api:3000' : 'http://localhost:3000',
         changeOrigin: true,
         secure: false,
       },

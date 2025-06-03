@@ -15,6 +15,7 @@ import { Link } from 'react-router-dom';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
+import { useObfuscation } from '../../../../shared/contexts/ObfuscationContext';
 
 interface Afiliado {
   id: string;
@@ -42,6 +43,7 @@ interface Afiliado {
 }
 
 const AfiliadosPage: React.FC = () => {
+  const { obfuscatedApiClient } = useObfuscation();
   const [afiliados, setAfiliados] = useState<Afiliado[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,24 +57,9 @@ const AfiliadosPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Primero intentar con autenticación
-      let response = await fetch('/api/v1/afiliados', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-      
-      // Si falla la autenticación, usar endpoint temporal
-      if (!response.ok && response.status === 401) {
-        console.log('Usando endpoint temporal sin autenticación');
-        response = await fetch('/api/v1/afiliados/test');
-      }
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar afiliados');
-      }
-      
-      const data = await response.json();
+      console.log('🔍 Cargando afiliados...');
+      const data = await obfuscatedApiClient.get<Afiliado[]>('/v1/afiliados');
+      console.log('📋 Afiliados cargados:', data);
       setAfiliados(data);
     } catch (err: any) {
       console.error('Error loading afiliados:', err);
@@ -130,17 +117,9 @@ const AfiliadosPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/v1/afiliados/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al eliminar el afiliado');
-      }
-
+      console.log('🗑️ Eliminando afiliado:', id);
+      await obfuscatedApiClient.delete(`/v1/afiliados/${id}`);
+      console.log('✅ Afiliado eliminado exitosamente');
       await loadAfiliados();
     } catch (err: any) {
       console.error('Error deleting afiliado:', err);

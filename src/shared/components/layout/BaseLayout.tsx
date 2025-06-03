@@ -52,6 +52,8 @@ import {
   Users2,
   // Afiliado icons
   CreditCard,
+  // Depósito icons
+  Warehouse,
   // General icons
   FolderOpen,
   List,
@@ -110,6 +112,11 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
       '/admin/requests/approved': <CheckCircle className="w-4 h-4" />,
       '/admin/analytics': <BarChart3 className="w-5 h-5" />,
       '/admin/settings': <Settings className="w-5 h-5" />,
+
+      // === DEPÓSITO ROUTES ===
+      '/admin/deposito': <Warehouse className="w-5 h-5" />,
+      '/admin/deposito/articulos': <Package className="w-5 h-5" />,
+      '/admin/deposito/grupos': <FolderOpen className="w-5 h-5" />,
 
       // === AUDITOR ROUTES ===
       '/auditor/requests': <ClipboardCheck className="w-5 h-5" />,
@@ -191,6 +198,9 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
     }
     if (path.includes('/admin/requests')) {
       return <FileText className="w-4 h-4" />;
+    }
+    if (path.includes('/admin/deposito')) {
+      return <Warehouse className="w-4 h-4" />;
     }
     if (path.includes('/auditor')) {
       return <ClipboardCheck className="w-4 h-4" />;

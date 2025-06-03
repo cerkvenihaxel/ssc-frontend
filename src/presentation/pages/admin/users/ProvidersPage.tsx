@@ -2,24 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, Filter, Plus, AlertCircle, Building, 
-  Mail, Phone, Edit, Eye, ChevronLeft, ChevronRight 
+  Mail, Phone, Edit, Eye, ChevronLeft, ChevronRight, Trash2 
 } from 'lucide-react';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
 import LoadingSpinner from '../../../../shared/components/ui/LoadingSpinner';
 import { useAdmin } from '../../../hooks/useAdmin';
+import { useObfuscatedRouter } from '../../../../shared/components/routing/ObfuscatedRouter';
 import type { AdminProvider } from '../../../../infrastructure/repositories/HttpAdminRepository';
 
 const ProvidersPage: React.FC = () => {
-  const navigate = useNavigate();
   const [providers, setProviders] = useState<AdminProvider[]>([]);
   const [totalProviders, setTotalProviders] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-
-  const { getAllProviders, loading: adminLoading, error, setError } = useAdmin();
+  
+  const { navigate: navigateObfuscated } = useObfuscatedRouter();
+  const { 
+    loading: adminLoading, 
+    error: adminError, 
+    setError,
+    getAllProviders,
+    deleteProvider 
+  } = useAdmin();
 
   const loadProviders = async () => {
     const result = await getAllProviders();
@@ -90,7 +97,7 @@ const ProvidersPage: React.FC = () => {
           </div>
           <div className="mt-4 sm:mt-0">
             <Button
-              onClick={() => navigate('/admin/users/providers/create')}
+              onClick={() => navigateObfuscated('/admin/users/providers/create')}
               className="inline-flex items-center"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -100,7 +107,7 @@ const ProvidersPage: React.FC = () => {
         </div>
 
         {/* Error Message */}
-        {error && (
+        {adminError && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
             <div className="flex">
               <AlertCircle className="h-5 w-5 text-red-400" />
@@ -109,7 +116,7 @@ const ProvidersPage: React.FC = () => {
                   Error al cargar proveedores
                 </h3>
                 <div className="mt-2 text-sm text-red-700 dark:text-red-300">
-                  {error}
+                  {adminError}
                 </div>
                 <div className="mt-3">
                   <Button
@@ -273,14 +280,14 @@ const ProvidersPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex items-center space-x-3">
                         <button
-                          onClick={() => navigate(`/admin/users/providers/${provider.providerId}`)}
+                          onClick={() => navigateObfuscated(`/admin/users/providers/${provider.providerId}`)}
                           className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                           title="Ver detalles"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => navigate(`/admin/users/providers/${provider.providerId}/edit`)}
+                          onClick={() => navigateObfuscated(`/admin/users/providers/${provider.providerId}/edit`)}
                           className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-300"
                           title="Editar"
                         >

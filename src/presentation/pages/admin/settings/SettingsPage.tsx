@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Settings, Shield, Bell, Mail, Database, Users, Save, Eye, EyeOff } from 'lucide-react';
+import { Settings, Shield, Bell, Mail, Database, Users, Save, Eye, EyeOff, Lock, Unlock, Info } from 'lucide-react';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
 import { useToast } from '../../../../shared/components/ui/ToastContainer';
+import { useObfuscation } from '../../../../shared/contexts/ObfuscationContext';
 
 interface SettingsForm {
   // General Settings
@@ -44,6 +45,7 @@ interface SettingsForm {
 
 const SettingsPage: React.FC = () => {
   const { showSuccess, showError, showWarning } = useToast();
+  const { config, updateConfig, obfuscateUrl, deobfuscateUrl } = useObfuscation();
   
   const [activeTab, setActiveTab] = useState('general');
   const [loading, setLoading] = useState(false);
@@ -465,6 +467,104 @@ const SettingsPage: React.FC = () => {
                           <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
                             Las sesiones expirarán después de este tiempo de inactividad
                           </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-md font-medium text-gray-900 dark:text-white mb-4">
+                          Ofuscación de URLs
+                        </h4>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-darkmode-700 rounded-lg">
+                            <div className="flex items-center">
+                              {config.enabled ? (
+                                <Lock className="w-5 h-5 text-green-600 mr-3" />
+                              ) : (
+                                <Unlock className="w-5 h-5 text-red-600 mr-3" />
+                              )}
+                              <div>
+                                <h5 className="text-sm font-medium text-gray-900 dark:text-white">
+                                  Estado de Ofuscación
+                                </h5>
+                                <p className="text-xs text-gray-500 dark:text-slate-400">
+                                  {config.enabled ? 'Activo - Los UUIDs están ocultos' : 'Inactivo - Los UUIDs son visibles'}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              type="button"
+                              variant={config.enabled ? 'danger' : 'success'}
+                              onClick={() => updateConfig({ enabled: !config.enabled })}
+                              disabled={loading}
+                              className="inline-flex items-center"
+                            >
+                              {config.enabled ? (
+                                <>
+                                  <Unlock className="w-4 h-4 mr-2" />
+                                  Desactivar
+                                </>
+                              ) : (
+                                <>
+                                  <Lock className="w-4 h-4 mr-2" />
+                                  Activar
+                                </>
+                              )}
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                                Método de Ofuscación
+                              </label>
+                              <select
+                                value={config.method}
+                                onChange={(e) => updateConfig({ method: e.target.value as any })}
+                                disabled={loading || !config.enabled}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-darkmode-400 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-darkmode-800 dark:text-white disabled:opacity-50"
+                              >
+                                <option value="base64">Base64</option>
+                                <option value="encryption">Encriptación</option>
+                                <option value="checksum">Checksum</option>
+                                <option value="timeBased">Basado en Tiempo</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                                Patrones Habilitados
+                              </label>
+                              <div className="text-sm text-gray-600 dark:text-slate-400">
+                                {config.endpoints.patterns.length} rutas configuradas
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <div className="flex items-start">
+                              <Info className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" />
+                              <div className="text-sm">
+                                <h6 className="font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                  Sobre la Ofuscación de URLs
+                                </h6>
+                                <p className="text-blue-700 dark:text-blue-300 mb-2">
+                                  La ofuscación de URLs oculta los identificadores UUID sensibles en las URLs del navegador,
+                                  mejorando la seguridad al prevenir la exposición de información interna del sistema.
+                                </p>
+                                <ul className="text-blue-700 dark:text-blue-300 text-xs space-y-1">
+                                  <li>• Los UUIDs se transforman en cadenas seguras</li>
+                                  <li>• La funcionalidad del sistema se mantiene intacta</li>
+                                  <li>• Solo afecta la visualización en el navegador</li>
+                                  <li>• Los logs incluyen información de depuración</li>
+                                </ul>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-xs text-gray-500 dark:text-slate-400">
+                            <strong>Nota:</strong> Los cambios en la ofuscación se aplican inmediatamente.
+                            Para ver los logs de depuración, abre las herramientas de desarrollador del navegador.
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -5,6 +5,7 @@ import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
 import DatePicker from '../../../../shared/components/ui/DatePicker';
+import { useObfuscation } from '../../../../shared/contexts/ObfuscationContext';
 
 interface ObraSocial {
   healthcareProviderId: string;
@@ -33,6 +34,7 @@ const formatDateForAPI = (displayDate: string): string => {
 };
 
 const AfiliadoCreatePage: React.FC = () => {
+  const { obfuscatedApiClient } = useObfuscation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loadingObrasSociales, setLoadingObrasSociales] = useState(true);
@@ -65,25 +67,12 @@ const AfiliadoCreatePage: React.FC = () => {
   useEffect(() => {
     const loadObrasSociales = async () => {
       try {
-        // Primero intentar con autenticación
-        let response = await fetch('/api/v1/obras-sociales', {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-          }
-        });
-        
-        // Si falla la autenticación, usar endpoint temporal
-        if (!response.ok && response.status === 401) {
-          console.log('Usando endpoint temporal sin autenticación para obras sociales');
-          response = await fetch('/api/v1/obras-sociales/test');
-        }
-        
-        if (response.ok) {
-          const data = await response.json();
-          setObrasSociales(data.filter((obra: ObraSocial) => 
-            isObraSocialActive(obra)
-          ));
-        }
+        console.log('🏥 Cargando obras sociales...');
+        const data = await obfuscatedApiClient.get<ObraSocial[]>('/v1/obras-sociales');
+        console.log('📋 Obras sociales cargadas:', data);
+        setObrasSociales(data.filter((obra: ObraSocial) => 
+          isObraSocialActive(obra)
+        ));
       } catch (error) {
         console.error('Error loading obras sociales:', error);
       } finally {
@@ -92,7 +81,7 @@ const AfiliadoCreatePage: React.FC = () => {
     };
 
     loadObrasSociales();
-  }, []);
+  }, [obfuscatedApiClient]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,18 +94,9 @@ const AfiliadoCreatePage: React.FC = () => {
         healthcareProviderIds: selectedObrasSociales
       };
       
-      const response = await fetch('/api/v1/afiliados', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error('Error al crear el afiliado');
-      }
+      console.log('💾 Creando afiliado:', payload);
+      await obfuscatedApiClient.post('/v1/afiliados', payload);
+      console.log('✅ Afiliado creado exitosamente');
 
       navigate('/admin/healthcare/afiliados');
     } catch (error) {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
   ArrowLeft, User, Mail, Phone, Building, Calendar, 
   Shield, Edit, Trash2, UserCheck, UserX, MapPin,
@@ -12,6 +12,7 @@ import { useToast } from '../../../../shared/components/ui/ToastContainer';
 import { useAdmin } from '../../../hooks/useAdmin';
 import { getSpecialtyIcon, getSpecialtyColorClasses, renderSpecialtyIcon } from '../../../../shared/utils/specialtyIcons';
 import type { AdminUser, Especialidad } from '../../../../infrastructure/repositories/HttpAdminRepository';
+import { useObfuscation } from '../../../../shared/contexts/ObfuscationContext';
 
 interface ProviderDetails extends AdminUser {
   updated_at?: string;
@@ -31,7 +32,13 @@ interface ProviderDetails extends AdminUser {
 }
 
 const ProviderDetailsPage: React.FC = () => {
+  // Usar useParams directo - el obfuscatedApiClient se encarga automáticamente de la desofuscación
   const { id } = useParams<{ id: string }>();
+  const { obfuscateUrl } = useObfuscation();
+
+  console.log('[ProviderDetailsPage] Raw ID from params:', id);
+  console.log('[ProviderDetailsPage] ID is UUID?:', id ? /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id) : false);
+
   const navigate = useNavigate();
   const { showSuccess, showError, showWarning } = useToast();
   const { getProviderById, updateProvider, deleteProvider, getAllEspecialidades, getProviderDetailsById, loading: adminLoading } = useAdmin();
@@ -43,14 +50,19 @@ const ProviderDetailsPage: React.FC = () => {
 
   useEffect(() => {
     if (id) {
+      console.log('[ProviderDetailsPage] Starting to load provider details for ID:', id);
       loadProviderDetails();
       loadEspecialidades();
+    } else {
+      navigate('/admin/users/providers');
     }
   }, [id]);
 
   const loadProviderDetails = async () => {
     setLoading(true);
     try {
+      console.log('[ProviderDetailsPage] Calling getProviderById with ID:', id);
+      
       // Intentar ambos endpoints para comparar
       const [providerData, directProviderData] = await Promise.allSettled([
         getProviderById(id!),
@@ -224,6 +236,12 @@ const ProviderDetailsPage: React.FC = () => {
     return `${classes} bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200`;
   };
 
+  const handleEditNavigation = () => {
+    if (id) {
+      navigate(`/admin/users/providers/${id}/edit`);
+    }
+  };
+
   if (loading) {
     return (
       <BaseLayout title="Detalles del Proveedor">
@@ -280,9 +298,9 @@ const ProviderDetailsPage: React.FC = () => {
           <div className="flex items-center space-x-3">
             <Button
               variant="outline-primary"
-              onClick={() => navigate(`/admin/users/providers/${id}/edit`)}
+              onClick={handleEditNavigation}
               className="flex items-center"
-              disabled={actionLoading}
+              disabled={actionLoading || !id}
             >
               <Edit className="w-4 h-4 mr-2" />
               Editar

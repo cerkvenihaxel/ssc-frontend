@@ -17,12 +17,28 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import BaseLayout from '../../../shared/components/layout/BaseLayout';
 import { useAuth } from '../../contexts/AuthContext';
+import { useObfuscation } from '../../../shared/contexts/ObfuscationContext';
 
 const AdminDashboard: React.FC = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const { isEnabled, config, obfuscateUrl, deobfuscateUrl, isObfuscated } = useObfuscation();
+
+  // Ejemplo de URL para debugging
+  const exampleUrl = '/admin/users/providers/8f769e24-1d03-4d69-9a74-974846867a81';
+  const obfuscatedExample = obfuscateUrl(exampleUrl);
+
+  console.log('[AdminDashboard] Obfuscation debugging:', {
+    currentPath: location.pathname,
+    isEnabled,
+    config,
+    exampleUrl,
+    obfuscatedExample,
+    isCurrentObfuscated: isObfuscated(location.pathname)
+  });
 
   const mainStats = [
     {
