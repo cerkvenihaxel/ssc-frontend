@@ -62,6 +62,13 @@ import GrupoCreatePage from './presentation/pages/admin/deposito/GrupoCreatePage
 import GrupoDetailsPage from './presentation/pages/admin/deposito/GrupoDetailsPage';
 import GrupoEditPage from './presentation/pages/admin/deposito/GrupoEditPage';
 
+// Medical Orders pages
+import MedicalOrderListPage from './presentation/pages/admin/medical-orders/MedicalOrderListPage';
+import MedicalOrderCreatePage from './presentation/pages/admin/medical-orders/MedicalOrderCreatePage';
+import MedicalOrderDetailsPage from './presentation/pages/admin/medical-orders/MedicalOrderDetailsPage';
+import MedicalOrderCorrectPage from './presentation/pages/admin/medical-orders/MedicalOrderCorrectPage';
+import MedicalOrderAIReviewPage from './presentation/pages/admin/medical-orders/MedicalOrderAIReviewPage';
+
 // Placeholder components for other roles
 const AuditorDashboard = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -375,6 +382,56 @@ const App: React.FC = () => {
                   <Route path="/admin/deposito/grupos/create" element={<GrupoCreatePage />} />
                   <Route path="/admin/deposito/grupos/:id" element={<GrupoDetailsPage />} />
                   <Route path="/admin/deposito/grupos/:id/edit" element={<GrupoEditPage />} />
+
+                  {/* Medical Orders pages */}
+                  <Route
+                    path="/admin/medical-orders"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <MedicalOrderListPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/medical-orders/create"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <MedicalOrderCreatePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/medical-orders/ai-review"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <MedicalOrderAIReviewPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/medical-orders/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <MedicalOrderDetailsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/medical-orders/:id/correct"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <MedicalOrderCorrectPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/medical-orders/:id/edit"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <MedicalOrderCreatePage />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Default route - redirect to user's home */}
                   <Route path="/" element={<RedirectToUserHome />} />
