@@ -13,6 +13,7 @@ export const ROUTES = {
   ADMIN_DASHBOARD: '/admin/dashboard',
   ADMIN_USERS: '/admin/users',
   ADMIN_REQUESTS: '/admin/requests',
+  ADMIN_MEDICAL_ORDERS: '/admin/medical-orders',
   ADMIN_ANALYTICS: '/admin/analytics',
   
   // Auditor routes
@@ -20,6 +21,13 @@ export const ROUTES = {
   
   // Efector routes
   EFECTOR_REQUESTS: '/efector/requests',
+  EFECTOR_REQUESTS_CREATE: '/efector/requests/create',
+  
+  // Admin Efector routes
+  ADMIN_EFFECTOR_REQUESTS: '/admin/effector-requests',
+  ADMIN_EFFECTOR_REQUESTS_LIST: '/admin/effector-requests/list',
+  ADMIN_EFFECTOR_REQUESTS_CREATE: '/admin/effector-requests/create',
+  ADMIN_EFFECTOR_REQUESTS_AI_REVIEW: '/admin/effector-requests/ai-review',
   
   // Proveedor routes
   PROVEEDOR_QUOTATIONS: '/proveedor/quotations',

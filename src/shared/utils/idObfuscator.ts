@@ -74,6 +74,8 @@ export class IdObfuscator {
 
   static decrypt(encryptedId: string): string {
     try {
+      console.log(`[IdObfuscator] Attempting to decrypt: ${encryptedId.substring(0, 20)}...`);
+      
       // Restaurar formato original
       const restored = encryptedId.replace(/[-_.]/g, (match: string) => {
         switch (match) {
@@ -84,16 +86,21 @@ export class IdObfuscator {
         }
       });
       
+      console.log(`[IdObfuscator] Restored format: ${restored.substring(0, 20)}...`);
+      
       const decrypted = CryptoJS.AES.decrypt(restored, SECRET_KEY);
       const result = decrypted.toString(CryptoJS.enc.Utf8);
       
       if (!result) {
-        throw new Error('Decryption failed');
+        console.warn(`[IdObfuscator] Decryption returned empty result for: ${encryptedId.substring(0, 20)}...`);
+        throw new Error('Decryption failed - empty result');
       }
       
+      console.log(`[IdObfuscator] Successfully decrypted to: ${result}`);
       return result;
     } catch (error) {
-      console.error('Error decrypting ID:', error);
+      console.error(`[IdObfuscator] Error decrypting ID "${encryptedId.substring(0, 20)}...":`, error);
+      console.log(`[IdObfuscator] Falling back to Base64 decode for: ${encryptedId.substring(0, 20)}...`);
       return this.decodeBase64(encryptedId); // Fallback a Base64
     }
   }
@@ -149,17 +156,30 @@ export class IdObfuscator {
 
   static deobfuscateWithChecksum(obfuscatedId: string): { id: string; isValid: boolean } {
     try {
+      console.log(`[IdObfuscator] Attempting checksum deobfuscation for: ${obfuscatedId.substring(0, 20)}...`);
+      
       const payload = this.decrypt(obfuscatedId);
+      console.log(`[IdObfuscator] Decrypted payload: ${payload}`);
+      
       const [id, providedChecksum] = payload.split('|');
+      
+      if (!id || !providedChecksum) {
+        console.warn(`[IdObfuscator] Invalid payload format - missing id or checksum: "${payload}"`);
+        return { id: obfuscatedId, isValid: false };
+      }
+      
       const expectedChecksum = CryptoJS.MD5(id + SECRET_KEY).toString().substring(0, 8);
+      console.log(`[IdObfuscator] Provided checksum: ${providedChecksum}, Expected: ${expectedChecksum}`);
       
       if (providedChecksum !== expectedChecksum) {
+        console.warn(`[IdObfuscator] Checksum mismatch for ID: ${id}`);
         return { id, isValid: false };
       }
       
+      console.log(`[IdObfuscator] Successfully deobfuscated with valid checksum: ${id}`);
       return { id, isValid: true };
     } catch (error) {
-      console.error('Error deobfuscating with checksum:', error);
+      console.error(`[IdObfuscator] Error deobfuscating with checksum "${obfuscatedId.substring(0, 20)}...":`, error);
       return { id: obfuscatedId, isValid: false };
     }
   }
@@ -225,14 +245,96 @@ export class IdObfuscator {
   }
 
   static smartDeobfuscate(possiblyObfuscatedId: string, options?: { method?: 'base64' | 'encrypt' | 'checksum' | 'timeBased' }): { id: string; isValid: boolean; wasObfuscated: boolean } {
+    console.log(`[IdObfuscator] smartDeobfuscate called with: ${possiblyObfuscatedId.substring(0, 20)}...`);
+    
     // Si ya parece ser un UUID, no fue ofuscado
     if (this.isUUID(possiblyObfuscatedId)) {
+      console.log(`[IdObfuscator] Input is already a UUID: ${possiblyObfuscatedId}`);
       return { id: possiblyObfuscatedId, isValid: true, wasObfuscated: false };
     }
     
     // Intentar deofuscar
+    console.log(`[IdObfuscator] Attempting to deobfuscate with method: ${options?.method || 'checksum'}`);
     const result = this.deobfuscate(possiblyObfuscatedId, options);
+    
+    console.log(`[IdObfuscator] Deobfuscation result:`, {
+      originalId: possiblyObfuscatedId.substring(0, 20) + '...',
+      resultId: result.id,
+      isValid: result.isValid,
+      wasObfuscated: true
+    });
+    
     return { ...result, wasObfuscated: true };
+  }
+
+  /**
+   * Función de test para verificar el sistema de ofuscación
+   */
+  static testObfuscation(): void {
+    console.log('=== IdObfuscator Test Suite ===');
+    
+    const testUUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+    console.log(`Original UUID: ${testUUID}`);
+    
+    // Test cada método
+    const methods: Array<'base64' | 'encrypt' | 'checksum' | 'timeBased'> = ['base64', 'encrypt', 'checksum', 'timeBased'];
+    
+    methods.forEach(method => {
+      console.log(`\n--- Testing method: ${method} ---`);
+      
+      try {
+        // Ofuscar
+        const obfuscated = this.obfuscate(testUUID, { method });
+        console.log(`Obfuscated: ${obfuscated}`);
+        
+        // Desofuscar
+        const deobfuscated = this.deobfuscate(obfuscated, { method });
+        console.log(`Deobfuscated:`, deobfuscated);
+        
+        // Test smartDeobfuscate
+        const smartResult = this.smartDeobfuscate(obfuscated, { method });
+        console.log(`Smart deobfuscated:`, smartResult);
+        
+        // Verificar resultado
+        const success = deobfuscated.id === testUUID && deobfuscated.isValid;
+        console.log(`✅ Method ${method}: ${success ? 'PASSED' : 'FAILED'}`);
+        
+        if (!success) {
+          console.error(`❌ Expected: ${testUUID}, Got: ${deobfuscated.id}, Valid: ${deobfuscated.isValid}`);
+        }
+        
+      } catch (error) {
+        console.error(`❌ Method ${method} FAILED with error:`, error);
+      }
+    });
+    
+    console.log('\n=== Test Suite Complete ===');
+  }
+
+  /**
+   * Test específico para un ID problemático
+   */
+  static testSpecificId(problematicId: string, method: 'base64' | 'encrypt' | 'checksum' | 'timeBased' = 'checksum'): void {
+    console.log(`=== Testing Specific ID: ${problematicId.substring(0, 20)}... ===`);
+    
+    try {
+      const result = this.smartDeobfuscate(problematicId, { method });
+      console.log('Result:', result);
+      
+      if (result.wasObfuscated && result.isValid && this.isUUID(result.id)) {
+        console.log('✅ Successfully deobfuscated to valid UUID:', result.id);
+      } else {
+        console.log('❌ Failed to deobfuscate to valid UUID');
+        console.log('Details:', {
+          wasObfuscated: result.wasObfuscated,
+          isValid: result.isValid,
+          isUUID: this.isUUID(result.id),
+          resultId: result.id
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error during test:', error);
+    }
   }
 }
 
@@ -254,4 +356,10 @@ export const createObfuscatedRoute = (basePath: string, id: string): string => {
 export const parseObfuscatedRoute = (obfuscatedId: string): { id: string; isValid: boolean } => {
   const result = IdObfuscator.smartDeobfuscate(obfuscatedId);
   return { id: result.id, isValid: result.isValid };
-}; 
+};
+
+// Exponer globalmente para debugging en desarrollo
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  (window as any).IdObfuscator = IdObfuscator;
+  console.log('🔧 IdObfuscator exposed globally for debugging. Use IdObfuscator.testObfuscation() to run tests.');
+} 

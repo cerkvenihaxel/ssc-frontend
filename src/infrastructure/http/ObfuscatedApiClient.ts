@@ -168,45 +168,81 @@ export class ObfuscatedApiClient {
   private deobfuscateUrl(obfuscatedUrl: string): string {
     console.log(`[ObfuscatedApiClient] Deobfuscating URL: ${obfuscatedUrl}`);
     
-    // Verificar cache primero
-    if (this.urlMappingCache.has(obfuscatedUrl)) {
-      const cachedUrl = this.urlMappingCache.get(obfuscatedUrl)!;
-      console.log(`[ObfuscatedApiClient] Found in cache: ${obfuscatedUrl} -> ${cachedUrl}`);
-      return cachedUrl;
-    }
-
-    if (!this.shouldObfuscateEndpoint(obfuscatedUrl)) {
-      console.log(`[ObfuscatedApiClient] Endpoint should not be obfuscated: ${obfuscatedUrl}`);
-      return obfuscatedUrl;
-    }
-
-    // Intentar deofuscar cada parte que no parece ser un UUID
-    const parts = obfuscatedUrl.split('/');
-    console.log(`[ObfuscatedApiClient] URL parts:`, parts);
-    
-    const deobfuscatedParts = parts.map((part, index) => {
-      console.log(`[ObfuscatedApiClient] Processing part ${index}: "${part}"`);
-      
-      // Si ya es un UUID, no hacer nada
-      if (IdObfuscator.isUUID(part)) {
-        console.log(`[ObfuscatedApiClient] Part ${index} is already UUID: ${part}`);
-        return part;
+    try {
+      // Check cache first
+      if (this.urlMappingCache.has(obfuscatedUrl)) {
+        const cachedUrl = this.urlMappingCache.get(obfuscatedUrl)!;
+        console.log(`[ObfuscatedApiClient] Found in cache: ${obfuscatedUrl} -> ${cachedUrl}`);
+        return cachedUrl;
       }
 
-      // Si parece ser un token ofuscado, intentar deofuscar
-      const result = IdObfuscator.smartDeobfuscate(part, { method: this.config.method });
-      console.log(`[ObfuscatedApiClient] Deobfuscation result for "${part}":`, result);
-      
-      const finalPart = result.wasObfuscated && result.isValid ? result.id : part;
-      console.log(`[ObfuscatedApiClient] Final part ${index}: "${part}" -> "${finalPart}"`);
-      
-      return finalPart;
-    });
+      if (!this.shouldObfuscateEndpoint(obfuscatedUrl)) {
+        console.log(`[ObfuscatedApiClient] Endpoint should not be obfuscated: ${obfuscatedUrl}`);
+        return obfuscatedUrl;
+      }
 
-    const finalUrl = deobfuscatedParts.join('/');
-    console.log(`[ObfuscatedApiClient] Final deobfuscated URL: ${obfuscatedUrl} -> ${finalUrl}`);
-    
-    return finalUrl;
+      // Split URL into parts and process each potential ID
+      const parts = obfuscatedUrl.split('/');
+      console.log(`[ObfuscatedApiClient] URL parts:`, parts);
+      
+      const deobfuscatedParts = parts.map((part, index) => {
+        console.log(`[ObfuscatedApiClient] Processing part ${index}: "${part}"`);
+        
+        // Skip non-ID parts (like 'api', 'v1', etc.)
+        if (!part || part.length < 8 || /^(api|v1|v2|admin|user|auth|login|logout|dashboard|activities|users|medical-orders|effector-requests)$/i.test(part)) {
+          console.log(`[ObfuscatedApiClient] Part ${index} is not an ID, skipping: "${part}"`);
+          return part;
+        }
+
+        // If it's already a UUID, don't deobfuscate
+        if (IdObfuscator.isUUID(part)) {
+          console.log(`[ObfuscatedApiClient] Part ${index} is already UUID: ${part}`);
+          return part;
+        }
+
+        // Try to deobfuscate the part
+        try {
+          const result = IdObfuscator.smartDeobfuscate(part, { method: this.config.method });
+          console.log(`[ObfuscatedApiClient] Deobfuscation result for "${part}":`, result);
+          
+          if (result.wasObfuscated && result.isValid && IdObfuscator.isUUID(result.id)) {
+            const finalPart = result.id;
+            console.log(`[ObfuscatedApiClient] Successfully deobfuscated part ${index}: "${part}" -> "${finalPart}"`);
+            return finalPart;
+          } else if (result.wasObfuscated && !result.isValid) {
+            console.error(`[ObfuscatedApiClient] Deobfuscation failed for part ${index}: "${part}" - result invalid`);
+            // Return original part to avoid breaking the URL, but log the error
+            return part;
+          } else {
+            console.log(`[ObfuscatedApiClient] Part ${index} was not obfuscated: "${part}"`);
+            return part;
+          }
+        } catch (error) {
+          console.error(`[ObfuscatedApiClient] Error deobfuscating part ${index} "${part}":`, error);
+          // Return original part to avoid breaking the URL
+          return part;
+        }
+      });
+
+      const finalUrl = deobfuscatedParts.join('/');
+      console.log(`[ObfuscatedApiClient] Final deobfuscated URL: ${obfuscatedUrl} -> ${finalUrl}`);
+      
+      // Validate that we have successfully deobfuscated all necessary parts
+      const hasStillObfuscatedParts = deobfuscatedParts.some(part => 
+        part.length > 20 && !IdObfuscator.isUUID(part) && 
+        !part.match(/^(api|v1|v2|admin|user|auth|login|logout|dashboard|activities|users|medical-orders|effector-requests)$/i)
+      );
+      
+      if (hasStillObfuscatedParts) {
+        console.error(`[ObfuscatedApiClient] WARNING: URL may still contain obfuscated parts: ${finalUrl}`);
+      }
+      
+      return finalUrl;
+    } catch (error) {
+      console.error(`[ObfuscatedApiClient] Critical error in deobfuscateUrl:`, error);
+      console.error(`[ObfuscatedApiClient] Returning original URL as fallback: ${obfuscatedUrl}`);
+      return obfuscatedUrl;
+    }
   }
 
   /**

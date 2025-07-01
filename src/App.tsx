@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './presentation/contexts/AuthContext';
 import { ToastProvider } from './shared/components/ui/ToastContainer';
 import { ObfuscationProvider } from './shared/contexts/ObfuscationContext';
@@ -69,6 +69,20 @@ import MedicalOrderDetailsPage from './presentation/pages/admin/medical-orders/M
 import MedicalOrderCorrectPage from './presentation/pages/admin/medical-orders/MedicalOrderCorrectPage';
 import MedicalOrderAIReviewPage from './presentation/pages/admin/medical-orders/MedicalOrderAIReviewPage';
 
+// Effector pages
+import EffectorRequestListPage from './presentation/pages/effector/EffectorRequestListPage';
+import EffectorRequestCreatePage from './presentation/pages/effector/EffectorRequestCreatePage';
+
+// Admin Effector Request pages
+import EffectorRequestAdminPage from './presentation/pages/admin/effector-requests/EffectorRequestAdminPage';
+import EffectorRequestListAdminPage from './presentation/pages/admin/effector-requests/EffectorRequestListAdminPage';
+import EffectorRequestCreateAdminPage from './presentation/pages/admin/effector-requests/EffectorRequestCreateAdminPage';
+import EffectorRequestDetailsAdminPage from './presentation/pages/admin/effector-requests/EffectorRequestDetailsAdminPage';
+import EffectorRequestAIReviewPage from './presentation/pages/admin/effector-requests/EffectorRequestAIReviewPage';
+
+// Admin Activities page
+import ActivitiesPage from './presentation/pages/admin/ActivitiesPage';
+
 // Placeholder components for other roles
 const AuditorDashboard = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -79,14 +93,7 @@ const AuditorDashboard = () => (
   </div>
 );
 
-const EffectorDashboard = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="text-center">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard Efector</h1>
-      <p className="text-gray-600">Panel de efectores - En desarrollo</p>
-    </div>
-  </div>
-);
+// EffectorDashboard replaced with specific pages
 
 const ProveedorDashboard = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -291,6 +298,14 @@ const App: React.FC = () => {
                     }
                   />
                   <Route
+                    path="/admin/activities"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <ActivitiesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/admin/settings"
                     element={
                       <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
@@ -309,15 +324,7 @@ const App: React.FC = () => {
                     }
                   />
 
-                  {/* Protected routes - Efector */}
-                  <Route
-                    path="/efector/requests"
-                    element={
-                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_REQUESTS}>
-                        <EffectorDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
+                  {/* Protected routes - Efector moved to specific section below */}
 
                   {/* Protected routes - Proveedor */}
                   <Route
@@ -429,6 +436,98 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
                         <MedicalOrderCreatePage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Effector pages */}
+                  <Route
+                    path="/efector/requests"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_REQUESTS}>
+                        <EffectorRequestListPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/efector/requests/create"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_REQUESTS}>
+                        <EffectorRequestCreatePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/efector/requests/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_REQUESTS}>
+                        <EffectorRequestListPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/efector/requests/:id/edit"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_REQUESTS}>
+                        <EffectorRequestCreatePage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Admin Effector Request pages */}
+                  <Route
+                    path="/admin/effector-requests"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <EffectorRequestAdminPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/effector-requests/list"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <EffectorRequestListAdminPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/effector-requests/create"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <EffectorRequestCreateAdminPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/effector-requests/pending"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <EffectorRequestAdminPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/effector-requests/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <EffectorRequestDetailsAdminPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/effector-requests/:id/edit"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <EffectorRequestCreateAdminPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/effector-requests/ai-review"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <EffectorRequestAIReviewPage />
                       </ProtectedRoute>
                     }
                   />

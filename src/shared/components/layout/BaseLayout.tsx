@@ -118,6 +118,18 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
       '/admin/deposito/articulos': <Package className="w-5 h-5" />,
       '/admin/deposito/grupos': <FolderOpen className="w-5 h-5" />,
 
+      // === ADMIN EFFECTOR REQUEST ROUTES ===
+      '/admin/effector-requests': <Building className="w-5 h-5" />,
+      '/admin/effector-requests/list': <List className="w-4 h-4" />,
+      '/admin/effector-requests/create': <Plus className="w-4 h-4" />,
+      '/admin/effector-requests/pending': <Clock className="w-4 h-4" />,
+      '/admin/effector-requests/ai-review': <Activity className="w-4 h-4" />,
+      
+      // === ADMIN MEDICAL ORDER ROUTES ===
+      '/admin/medical-orders': <FileText className="w-5 h-5" />,
+      '/admin/medical-orders/create': <Plus className="w-4 h-4" />,
+      '/admin/medical-orders/ai-review': <Activity className="w-4 h-4" />,
+
       // === AUDITOR ROUTES ===
       '/auditor/requests': <ClipboardCheck className="w-5 h-5" />,
       '/auditor/requests/pending': <Clock className="w-5 h-5" />,
@@ -195,6 +207,12 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
     }
     if (path.includes('/admin/users')) {
       return <Users className="w-4 h-4" />;
+    }
+    if (path.includes('/admin/effector-requests')) {
+      return <Building className="w-4 h-4" />;
+    }
+    if (path.includes('/admin/medical-orders')) {
+      return <FileText className="w-4 h-4" />;
     }
     if (path.includes('/admin/requests')) {
       return <FileText className="w-4 h-4" />;
