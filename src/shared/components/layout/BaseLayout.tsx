@@ -151,6 +151,13 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
       '/proveedor/catalog': <Archive className="w-5 h-5" />,
       '/proveedor/profile': <Store className="w-5 h-5" />,
 
+      // === PROVIDER SERVICES ROUTES ===
+      '/provider-services': <Briefcase className="w-5 h-5" />,
+      '/admin/provider-services': <Briefcase className="w-5 h-5" />,
+      '/provider-services/available-requests': <Search className="w-5 h-5" />,
+      '/provider-services/my-quotations': <Calculator className="w-5 h-5" />,
+      '/provider-services/audited-quotations': <CheckCircle className="w-5 h-5" />,
+
       // === MÉDICO ROUTES ===
       '/medico/solicitudes': <Stethoscope className="w-5 h-5" />,
       '/medico/solicitudes/create': <Clipboard className="w-5 h-5" />,

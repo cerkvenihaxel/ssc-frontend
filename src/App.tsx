@@ -83,6 +83,12 @@ import EffectorRequestAIReviewPage from './presentation/pages/admin/effector-req
 // Admin Activities page
 import ActivitiesPage from './presentation/pages/admin/ActivitiesPage';
 
+// Provider Services pages
+import { AvailableRequestsPage, MyQuotationsPage, AuditedQuotationsPage } from './presentation/pages/provider-services';
+import RequestDetailPage from './presentation/pages/provider-services/RequestDetailPage';
+import CreateQuotationPage from './presentation/pages/provider-services/CreateQuotationPage';
+import QuotationAuditPage from './presentation/pages/provider-services/QuotationAuditPage';
+
 // Placeholder components for other roles
 const AuditorDashboard = () => (
   <div className="min-h-screen flex items-center justify-center">
@@ -332,6 +338,98 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_QUOTATIONS}>
                         <ProveedorDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Provider Services Routes */}
+                  <Route
+                    path="/provider-services/available-requests"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_QUOTATIONS}>
+                        <AvailableRequestsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/provider-services/request/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_QUOTATIONS}>
+                        <RequestDetailPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/provider-services/create-quotation/:requestId"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_QUOTATIONS}>
+                        <CreateQuotationPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/provider-services/my-quotations"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_QUOTATIONS}>
+                        <MyQuotationsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/provider-services/audited-quotations"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.CREATE_QUOTATIONS}>
+                        <AuditedQuotationsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Admin Provider Services Routes */}
+                  <Route
+                    path="/admin/provider-services/available-requests"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_ALL_QUOTATIONS}>
+                        <AvailableRequestsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/provider-services/request/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_ALL_QUOTATIONS}>
+                        <RequestDetailPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/provider-services/create-quotation/:requestId"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.MANAGE_QUOTATIONS}>
+                        <CreateQuotationPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/provider-services/my-quotations"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.MANAGE_QUOTATIONS}>
+                        <MyQuotationsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/provider-services/audited-quotations"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.AUDIT_QUOTATIONS}>
+                        <AuditedQuotationsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/provider-services/audit-quotation/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.AUDIT_QUOTATIONS}>
+                        <QuotationAuditPage />
                       </ProtectedRoute>
                     }
                   />
