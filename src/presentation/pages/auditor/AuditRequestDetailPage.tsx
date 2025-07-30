@@ -13,7 +13,7 @@ export const AuditRequestDetailPage: React.FC = () => {
   
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { loading } = useAuditor();
+  const { getAuditRequestDetail, loading } = useAuditor();
   const [auditRequest, setAuditRequest] = useState<AuditRequest | null>(null);
 
   useEffect(() => {
@@ -21,143 +21,21 @@ export const AuditRequestDetailPage: React.FC = () => {
     console.log('🔍 AuditRequestDetailPage - id:', id);
     
     if (id) {
-      // El ID ya viene desofuscado desde useParams, no necesitamos desofuscar la ruta completa
       console.log('🔍 AuditRequestDetailPage - Using ID directly from params:', id);
       loadAuditRequestDetail(id);
     }
-  }, [id]); // Solo depender del id, no de getCurrentRealPath
+  }, [id]);
 
   const loadAuditRequestDetail = async (auditId: string) => {
     console.log('🔍 AuditRequestDetailPage - loadAuditRequestDetail called with:', auditId);
     try {
-      // Mock data para demostración
-      const mockAuditRequest: AuditRequest = {
-        audit_request_id: 'AR-2025-001',
-        quotation_id: 'Q-2025-001',
-        medical_order_id: 'MO-2025-000001',
-        provider_id: 'P-001',
-        audit_status: 'completed',
-        auditor_notes: 'Cotización aprobada después de revisión detallada de costos y calidad. El proveedor cumplió con todos los criterios establecidos y ofreció un precio competitivo dentro del rango aceptable.',
-        rejection_reason: undefined,
-        original_order_cost: 85000,
-        quoted_cost: 82000,
-        approved_cost: 80000,
-        audit_criteria: {
-          price_reasonable: true,
-          quality_adequate: true,
-          delivery_time_acceptable: true,
-          provider_reliable: true,
-          documentation_complete: true
-        },
-        audit_type: 'manual',
-        auditor_id: 'AUD-001',
-        audited_at: '2025-01-15T10:30:00Z',
-        completed_at: '2025-01-15T11:00:00Z',
-        created_at: '2025-01-15T09:00:00Z',
-        updated_at: '2025-01-15T11:00:00Z',
-        quotation: {
-          quotation_id: 'Q-2025-001',
-          quotation_number: 'COT-2025-001',
-          patient_name: 'María González',
-          total_cost: 82000,
-          status: 'completed',
-          provider_name: 'Proveedor Médico ABC',
-          delivery_days: 15,
-          items_count: 5,
-          created_at: '2025-01-10T09:00:00Z',
-          updated_at: '2025-01-15T11:00:00Z',
-          items: [
-            {
-              item_id: 'ITEM-001',
-              name: 'Monitor Multiparamétrico',
-              description: 'Monitor de signos vitales con pantalla táctil',
-              quantity: 1,
-              unit_cost: 45000,
-              total_cost: 45000,
-              category: 'Equipos de Monitoreo'
-            },
-            {
-              item_id: 'ITEM-002',
-              name: 'Bomba de Infusión',
-              description: 'Bomba de infusión volumétrica',
-              quantity: 2,
-              unit_cost: 12000,
-              total_cost: 24000,
-              category: 'Equipos de Infusión'
-            },
-            {
-              item_id: 'ITEM-003',
-              name: 'Desfibrilador',
-              description: 'Desfibrilador automático externo',
-              quantity: 1,
-              unit_cost: 8000,
-              total_cost: 8000,
-              category: 'Equipos de Emergencia'
-            },
-            {
-              item_id: 'ITEM-004',
-              name: 'Ventilador Mecánico',
-              description: 'Ventilador mecánico portátil',
-              quantity: 1,
-              unit_cost: 5000,
-              total_cost: 5000,
-              category: 'Equipos de Respiración'
-            }
-          ],
-          medical_order: {
-            medical_order_id: 'MO-2025-000001',
-            patient_name: 'María González',
-            doctor_name: 'Dr. Carlos Mendoza',
-            specialty: ['Cardiología', 'Terapia Intensiva'],
-            urgency: 'medium',
-            created_at: '2025-01-08T14:00:00Z'
-          }
-        },
-        medicalOrder: {
-          medical_order_id: 'MO-2025-000001',
-          order_number: 'MO-2025-000001',
-          patient_name: 'María González',
-          urgency: 'medium',
-          doctor_name: 'Dr. Carlos Mendoza',
-          specialty: 'Cardiología',
-          created_at: '2025-01-08T14:00:00Z',
-          items: [
-            {
-              item_id: 'MO-ITEM-001',
-              name: 'Monitor Multiparamétrico',
-              description: 'Monitor de signos vitales con pantalla táctil',
-              quantity: 1,
-              category: 'Equipos de Monitoreo'
-            },
-            {
-              item_id: 'MO-ITEM-002',
-              name: 'Bomba de Infusión',
-              description: 'Bomba de infusión volumétrica',
-              quantity: 2,
-              category: 'Equipos de Infusión'
-            },
-            {
-              item_id: 'MO-ITEM-003',
-              name: 'Desfibrilador',
-              description: 'Desfibrilador automático externo',
-              quantity: 1,
-              category: 'Equipos de Emergencia'
-            },
-            {
-              item_id: 'MO-ITEM-004',
-              name: 'Ventilador Mecánico',
-              description: 'Ventilador mecánico portátil',
-              quantity: 1,
-              category: 'Equipos de Respiración'
-            }
-          ]
-        }
-      };
-      
-      setAuditRequest(mockAuditRequest);
+      console.log('🔍 AuditRequestDetailPage - Calling backend API...');
+      const result = await getAuditRequestDetail(auditId);
+      console.log('🔍 AuditRequestDetailPage - Backend response:', result);
+      setAuditRequest(result);
     } catch (error) {
       console.error('🔍 AuditRequestDetailPage - Error loading audit request detail:', error);
-      setAuditRequest(null);
+      alert(`Error al cargar el detalle de la auditoría: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 
@@ -233,7 +111,10 @@ export const AuditRequestDetailPage: React.FC = () => {
                     Detalle de Auditoría
                   </h1>
                   <p className="text-gray-600 dark:text-slate-400 mt-1">
-                    Información completa de la auditoría y sus relaciones
+                    Información completa de la auditoría realizada
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    ✓ Conectado al backend real
                   </p>
                 </div>
               </div>

@@ -32,11 +32,15 @@ export const AuditedRequestsPage: React.FC = () => {
 
   const loadAuditedRequests = async (page = pagination.page, limit = pagination.limit) => {
     try {
+      console.log('🔍 AuditedRequestsPage - Loading audited requests with filters:', { ...filters, page, limit });
+      
       const result = await getAuditedRequests({
         ...filters,
         page,
         limit
       });
+      
+      console.log('🔍 AuditedRequestsPage - Backend response:', result);
       
       setRequests(result.data);
       const newPagination = {
@@ -46,9 +50,10 @@ export const AuditedRequestsPage: React.FC = () => {
         total_pages: result.total_pages || Math.ceil((result.total || 0) / (result.limit || limit))
       };
       
+      console.log('🔍 AuditedRequestsPage - Setting pagination:', newPagination);
       setPagination(newPagination);
     } catch (error) {
-      console.error('Error loading audited requests:', error);
+      console.error('🔍 AuditedRequestsPage - Error loading audited requests:', error);
       setRequests([]);
       setPagination({
         page: 1,
@@ -56,10 +61,14 @@ export const AuditedRequestsPage: React.FC = () => {
         total: 0,
         total_pages: 1
       });
+      
+      // Mostrar error al usuario
+      alert(`Error al cargar solicitudes auditadas: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     }
   };
 
   const handleView = (id: string) => {
+    console.log('🔍 AuditedRequestsPage - Navigating to audit request detail:', id);
     navigate(`/auditor/audit-requests/${id}`);
   };
 
@@ -119,6 +128,9 @@ export const AuditedRequestsPage: React.FC = () => {
                   <p className="text-gray-600 dark:text-slate-400 mt-1">
                     Revisa todas las auditorías realizadas
                   </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                    ✓ Conectado al backend real
+                  </p>
                 </div>
                 <div className="flex items-center space-x-3 mt-4 sm:mt-0">
                   <Button
@@ -139,14 +151,6 @@ export const AuditedRequestsPage: React.FC = () => {
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Exportar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigate('/auditor/audit-requests/7d879f22-b683-424d-88f9-3288f214cf87')}
-                    className="flex items-center"
-                  >
-                    Test Detail
                   </Button>
                 </div>
               </div>
@@ -238,6 +242,28 @@ export const AuditedRequestsPage: React.FC = () => {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-darkmode-400 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-darkmode-700 dark:text-white"
                   />
                 </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearFilters}
+                  className="flex items-center"
+                >
+                  Limpiar Filtros
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                    loadAuditedRequests(1, pagination.limit);
+                  }}
+                  className="flex items-center"
+                >
+                  Aplicar Filtros
+                </Button>
               </div>
             </div>
           </div>
