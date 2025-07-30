@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './presentation/contexts/AuthContext';
 import { ToastProvider } from './shared/components/ui/ToastContainer';
 import { ObfuscationProvider } from './shared/contexts/ObfuscationContext';
@@ -89,15 +89,15 @@ import RequestDetailPage from './presentation/pages/provider-services/RequestDet
 import CreateQuotationPage from './presentation/pages/provider-services/CreateQuotationPage';
 import QuotationAuditPage from './presentation/pages/provider-services/QuotationAuditPage';
 
-// Placeholder components for other roles
-const AuditorDashboard = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="text-center">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard Auditor</h1>
-      <p className="text-gray-600">Panel de auditoría - En desarrollo</p>
-    </div>
-  </div>
-);
+// Auditor pages
+import { AuditorDashboard, PendingAuditRequestsPage, AuditedRequestsPage, AuditRequestDetailPage, AuditStatisticsPage, PendingQuotationsPage, CompletedRequestsPage, QuotationDetailPage, AuditQuotationPage } from './presentation/pages/auditor';
+
+// Debug page
+import { DebugSidebarPage } from './presentation/pages/admin/DebugSidebarPage';
+import { TestSidebarPage } from './presentation/pages/admin/TestSidebarPage';
+
+// Material Delivery pages
+import { MaterialDeliveryListPage, MaterialDeliveryDetailPage } from './presentation/pages/material-delivery';
 
 // EffectorDashboard replaced with specific pages
 
@@ -626,6 +626,126 @@ const App: React.FC = () => {
                     element={
                       <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
                         <EffectorRequestAIReviewPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Auditor routes */}
+                  <Route
+                    path="/auditor/dashboard"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <AuditorDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/auditor/pending-requests"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <PendingAuditRequestsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/auditor/audited-requests"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <AuditedRequestsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/auditor/audit-requests/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <AuditRequestDetailPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/auditor/statistics"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <AuditStatisticsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Material Delivery routes */}
+                  <Route
+                    path="/material-delivery"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_DELIVERIES}>
+                        <MaterialDeliveryListPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/material-delivery/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_DELIVERIES}>
+                        <MaterialDeliveryDetailPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Auditor Services routes */}
+                  <Route
+                    path="/auditor-services/pending-quotations"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <PendingQuotationsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/auditor-services/audited-requests"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <AuditedRequestsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/auditor-services/completed-requests"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <CompletedRequestsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/auditor-services/quotations/:id"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.VIEW_AUDIT_REQUESTS}>
+                        <QuotationDetailPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/auditor/audit-requests/:id/audit"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.UPDATE_AUDIT_REQUESTS}>
+                        <AuditQuotationPage />
+                      </ProtectedRoute>
+                    }
+                  />
+
+                  {/* Debug route - temporal */}
+                  <Route
+                    path="/debug-sidebar"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <DebugSidebarPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/test-sidebar"
+                    element={
+                      <ProtectedRoute requiredPermission={PERMISSIONS.ADMIN_ACCESS}>
+                        <TestSidebarPage />
                       </ProtectedRoute>
                     }
                   />

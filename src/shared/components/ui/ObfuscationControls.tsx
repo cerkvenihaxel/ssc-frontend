@@ -192,9 +192,9 @@ export const ObfuscationStatus: React.FC<{ className?: string }> = ({ className 
   return (
     <div className={`flex items-center space-x-1 ${className}`}>
       {isEnabled ? (
-        <Shield className="w-4 h-4 text-green-600" title="Ofuscación activa" />
+        <Shield className="w-4 h-4 text-green-600" />
       ) : (
-        <ShieldOff className="w-4 h-4 text-gray-400" title="Ofuscación desactivada" />
+        <ShieldOff className="w-4 h-4 text-gray-400" />
       )}
       <span className="text-xs text-gray-500">
         {isEnabled ? 'Seguro' : 'Dev'}

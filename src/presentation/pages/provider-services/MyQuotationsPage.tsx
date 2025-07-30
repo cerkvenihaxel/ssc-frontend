@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, Package, Eye, Edit3, Trash2, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Search, Filter, Package, Eye, Edit3, Trash2, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 import BaseLayout from '../../../shared/components/layout/BaseLayout';
 import Button from '../../../shared/components/ui/Button';
 import Input from '../../../shared/components/ui/Input';
@@ -28,7 +28,7 @@ interface Quotation {
 }
 
 const MyQuotationsPage: React.FC = () => {
-  const { showSuccess, showError, showConfirm } = useToast();
+  const { showSuccess, showError } = useToast();
   const { getMyQuotations, deleteQuotation, loading } = useProviderServices();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [filteredQuotations, setFilteredQuotations] = useState<Quotation[]>([]);
@@ -80,8 +80,7 @@ const MyQuotationsPage: React.FC = () => {
   };
 
   const handleDeleteQuotation = async (quotationId: string) => {
-    const confirmed = await showConfirm(
-      'Confirmar eliminación',
+    const confirmed = window.confirm(
       '¿Estás seguro de que deseas eliminar esta cotización? Esta acción no se puede deshacer.'
     );
 
@@ -133,7 +132,7 @@ const MyQuotationsPage: React.FC = () => {
   };
 
   const getAuditStatusBadge = (auditStatus?: string) => {
-    if (!auditStatus) return null;
+    if (!auditStatus) return undefined;
     
     const baseClasses = "px-2 py-1 text-xs font-medium rounded-full";
     switch (auditStatus) {

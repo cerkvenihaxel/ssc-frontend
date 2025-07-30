@@ -9,6 +9,7 @@ import {
   UserCheck,
   Stethoscope,
   Shield,
+  ShieldCheck,
   Activity,
   AlertTriangle,
   CheckCircle,
@@ -18,7 +19,8 @@ import {
   ArrowDownRight,
   RefreshCw,
   Plus,
-  Eye
+  Eye,
+  Package
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import BaseLayout from '../../../shared/components/layout/BaseLayout';
@@ -453,6 +455,22 @@ const AdminDashboard: React.FC = () => {
                     href: '/admin/effector-requests',
                     color: 'bg-amber-500',
                     stats: effectorStats?.total || 0
+                  },
+                  {
+                    title: 'Auditoría',
+                    description: 'Gestionar auditorías de cotizaciones',
+                    icon: ShieldCheck,
+                    href: '/auditor/dashboard',
+                    color: 'bg-emerald-500',
+                    stats: null
+                  },
+                  {
+                    title: 'Entregas de Materiales',
+                    description: 'Gestionar entregas a pacientes',
+                    icon: Package,
+                    href: '/material-delivery',
+                    color: 'bg-orange-500',
+                    stats: null
                   },
                   {
                     title: 'Análisis y Reportes',

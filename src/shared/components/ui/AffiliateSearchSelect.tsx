@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, ChevronDown, User, X, Loader } from 'lucide-react';
 import { useObfuscation } from '../../contexts/ObfuscationContext';
 
@@ -26,7 +26,6 @@ interface AffiliateSearchSelectProps {
 }
 
 const AffiliateSearchSelect: React.FC<AffiliateSearchSelectProps> = ({
-  value,
   onChange,
   onHealthcareProvidersChange,
   placeholder = "Buscar afiliado...",
@@ -46,7 +45,7 @@ const AffiliateSearchSelect: React.FC<AffiliateSearchSelectProps> = ({
   
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const searchAffiliates = async (search: string, pageNum: number = 1) => {
      try {

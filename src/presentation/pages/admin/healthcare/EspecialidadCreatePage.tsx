@@ -14,7 +14,9 @@ const EspecialidadCreatePage: React.FC = () => {
     nombre: '',
     descripcion: '',
     codigo: '',
-    activa: true
+    activa: true,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   });
 
   const handleSubmit = async (e: React.FormEvent) => {

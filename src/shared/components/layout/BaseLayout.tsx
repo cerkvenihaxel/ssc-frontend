@@ -65,6 +65,7 @@ import type { Route } from '../../../domain/entities/User';
 import Button from '../ui/Button';
 import { Link, useLocation } from 'react-router-dom';
 
+
 interface BaseLayoutProps {
   children: ReactNode;
   title?: string;
@@ -131,10 +132,20 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
       '/admin/medical-orders/ai-review': <Activity className="w-4 h-4" />,
 
       // === AUDITOR ROUTES ===
+      '/auditor/dashboard': <ShieldCheck className="w-5 h-5" />,
+      '/auditor/pending-requests': <Clock className="w-5 h-5" />,
+      '/auditor/audited-requests': <History className="w-5 h-5" />,
+      '/auditor/statistics': <BarChart3 className="w-5 h-5" />,
       '/auditor/requests': <ClipboardCheck className="w-5 h-5" />,
       '/auditor/requests/pending': <Clock className="w-5 h-5" />,
       '/auditor/requests/history': <History className="w-5 h-5" />,
       '/auditor/reports': <FileBarChart className="w-5 h-5" />,
+
+      // === AUDITOR SERVICES ROUTES ===
+      '/auditor-services': <ShieldCheck className="w-5 h-5" />,
+      '/auditor-services/pending-quotations': <FileSearch className="w-5 h-5" />,
+      '/auditor-services/audited-requests': <CheckCircle className="w-5 h-5" />,
+      '/auditor-services/completed-requests': <Archive className="w-5 h-5" />,
 
       // === EFECTOR ROUTES ===
       '/efector/requests': <FileText className="w-5 h-5" />,
@@ -150,6 +161,10 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
       '/proveedor/orders': <Package className="w-5 h-5" />,
       '/proveedor/catalog': <Archive className="w-5 h-5" />,
       '/proveedor/profile': <Store className="w-5 h-5" />,
+
+      // === MATERIAL DELIVERY ROUTES ===
+      '/material-delivery': <Package className="w-5 h-5" />,
+      '/material-delivery/create': <Plus className="w-4 h-4" />,
 
       // === PROVIDER SERVICES ROUTES ===
       '/provider-services': <Briefcase className="w-5 h-5" />,
@@ -394,7 +409,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
             <Heart className="w-5 h-5 text-primary transition-transform duration-200 ease-out group-hover:scale-110" />
           </div>
           <h1 className="ml-3 text-lg font-bold text-white transition-transform duration-200 ease-out group-hover:translate-x-1">
-            Vada Health
+            SSC Salud
           </h1>
         </div>
         <button
@@ -432,7 +447,73 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
       {/* Navigation */}
       <div className="flex-1 overflow-y-auto">
         <nav className="px-3 py-4 space-y-1">
-          {user?.availableRoutes.map(route => renderMenuItem(route))}
+          {(() => {
+            // Obtener rutas del backend
+            const backendRoutes = user?.availableRoutes || [];
+            
+            // Definir las nuevas rutas para agregar
+            const newRoutes = [
+              {
+                path: '/auditor-services',
+                title: 'Servicios Auditores',
+                icon: 'ShieldCheck',
+                children: [
+                  {
+                    path: '/auditor-services/pending-quotations',
+                    title: 'Ver cotizaciones para auditar',
+                    icon: 'FileSearch'
+                  },
+                  {
+                    path: '/auditor-services/audited-requests',
+                    title: 'Solicitudes auditadas',
+                    icon: 'CheckCircle'
+                  },
+                  {
+                    path: '/auditor-services/completed-requests',
+                    title: 'Solicitudes finalizadas',
+                    icon: 'Archive'
+                  }
+                ]
+              },
+              {
+                path: '/material-delivery',
+                title: 'Material Entregado',
+                icon: 'Package',
+                children: [
+                  {
+                    path: '/material-delivery',
+                    title: 'Lista de Entregas',
+                    icon: 'Package'
+                  },
+                  {
+                    path: '/material-delivery/create',
+                    title: 'Nueva Entrega',
+                    icon: 'Plus'
+                  }
+                ]
+              }
+            ];
+            
+            // Combinar rutas del backend con las nuevas rutas
+            // Insertar las nuevas rutas después de "Servicios Proveedores"
+            const allRoutes = [...backendRoutes];
+            
+            // Buscar el índice de "Servicios Proveedores" para insertar después
+            const providerServicesIndex = allRoutes.findIndex(route => 
+              route.path === '/provider-services' || 
+              route.title === 'Servicios Proveedores'
+            );
+            
+            if (providerServicesIndex !== -1) {
+              // Insertar después de Servicios Proveedores
+              allRoutes.splice(providerServicesIndex + 1, 0, ...newRoutes);
+            } else {
+              // Si no se encuentra, agregar al final
+              allRoutes.push(...newRoutes);
+            }
+            
+            return allRoutes.map(route => renderMenuItem(route));
+          })()}
         </nav>
       </div>
 

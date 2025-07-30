@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Eye, Edit, Trash2, AlertCircle, FileText, Clock, CheckCircle, XCircle, Activity, TrendingUp, Users } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, AlertCircle, FileText, Clock, CheckCircle, XCircle, Activity, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
 import LoadingSpinner from '../../../../shared/components/ui/LoadingSpinner';
-import { useAuth } from '../../../contexts/AuthContext';
+
 import { useObfuscation } from '../../../../shared/contexts/ObfuscationContext';
 
 // Tipos para pedidos médicos
@@ -55,10 +55,7 @@ const MedicalOrderListPage: React.FC = () => {
   const [requesterFilter, setRequesterFilter] = useState('all');
   const [dateFromFilter, setDateFromFilter] = useState('');
   const [dateToFilter, setDateToFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(10);
 
-  const { hasPermission } = useAuth();
   const { obfuscatedApiClient } = useObfuscation();
 
   // Cargar pedidos médicos desde el API

@@ -5,7 +5,7 @@ import clsx from 'clsx';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'dark' | 'outline-primary' | 'outline-secondary';
+  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'dark' | 'outline-primary' | 'outline-secondary' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   as?: 'button' | 'a';
@@ -34,6 +34,8 @@ const Button: React.FC<ButtonProps> = ({
     dark: 'bg-dark border-dark text-white',
     'outline-primary': 'border-primary text-primary dark:border-primary',
     'outline-secondary': 'border-secondary text-slate-500 dark:border-darkmode-100/40 dark:text-slate-300',
+    outline: 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700',
+    ghost: 'border-transparent text-gray-700 bg-transparent hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800',
   };
 
   const sizeClasses = {
@@ -56,7 +58,7 @@ const Button: React.FC<ButtonProps> = ({
 
   if (as === 'a') {
     return (
-      <a href={href} className={classes} {...(props as any)}>
+      <a href={href} className={classes} {...(props as React.AnchorHTMLAttributes<HTMLAnchorElement>)}>
         {loading && (
           <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

@@ -65,10 +65,42 @@ const ArticulosPage: React.FC = () => {
       else if (stockFilter === 'out_of_stock') params.append('inStock', 'false');
       
       const endpoint = `/v1/deposito/articulos?${params.toString()}`;
-      const data = await obfuscatedApiClient.get<Articulo[]>(endpoint);
-      setArticulos(data);
+      console.log('🔍 Cargando artículos desde endpoint:', endpoint);
+      
+      const response = await obfuscatedApiClient.get<any>(endpoint);
+      console.log('📦 Respuesta completa del API:', response);
+      
+      // Manejar diferentes formatos de respuesta
+      let articulosData: Articulo[];
+      if (Array.isArray(response)) {
+        // Si la respuesta es directamente un array
+        articulosData = response;
+      } else if (response && Array.isArray(response.data)) {
+        // Si la respuesta tiene estructura { data: [...] }
+        articulosData = response.data;
+      } else if (response && Array.isArray(response.articulos)) {
+        // Si la respuesta tiene estructura { articulos: [...] }
+        articulosData = response.articulos;
+      } else if (response && Array.isArray(response.items)) {
+        // Si la respuesta tiene estructura { items: [...] }
+        articulosData = response.items;
+      } else {
+        // Si no se reconoce el formato, intentar con la respuesta completa
+        console.warn('⚠️ Formato de respuesta no reconocido, intentando con respuesta completa');
+        articulosData = Array.isArray(response) ? response : [];
+      }
+      
+      console.log('📦 Artículos procesados:', articulosData);
+      console.log('📊 Cantidad de artículos:', articulosData.length);
+      
+      setArticulos(articulosData);
     } catch (err: any) {
-      console.error('Error loading articulos:', err);
+      console.error('❌ Error loading articulos:', err);
+      console.error('❌ Error details:', {
+        message: err.message,
+        status: err.status,
+        response: err.response
+      });
       setError(err.message || 'Error al cargar los artículos');
     } finally {
       setLoading(false);

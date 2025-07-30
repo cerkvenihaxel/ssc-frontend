@@ -55,7 +55,7 @@ const SettingsPage: React.FC = () => {
   
   const [settings, setSettings] = useState<SettingsForm>({
     // General Settings
-    systemName: 'Vada Health',
+    systemName: 'SSC Salud',
     systemDescription: 'Sistema de Servicios de Salud',
     adminEmail: 'admin@ssc.com',
     supportEmail: 'soporte@ssc.com',
@@ -75,7 +75,7 @@ const SettingsPage: React.FC = () => {
     emailPort: '587',
     emailUsername: '',
     emailPassword: '',
-    emailFromName: 'Vada Health',
+    emailFromName: 'SSC Salud',
     emailFromAddress: 'noreply@ssc.com',
     
     // Notifications
@@ -298,7 +298,7 @@ const SettingsPage: React.FC = () => {
                           type="text"
                           value={settings.systemName}
                           onChange={(e) => handleInputChange('systemName', e.target.value)}
-                          placeholder="Vada Health"
+                          placeholder="SSC Salud"
                           disabled={loading}
                           required
                         />
@@ -652,7 +652,7 @@ const SettingsPage: React.FC = () => {
                           type="text"
                           value={settings.emailFromName}
                           onChange={(e) => handleInputChange('emailFromName', e.target.value)}
-                          placeholder="Vada Health"
+                          placeholder="SSC Salud"
                           disabled={loading}
                         />
                       </div>

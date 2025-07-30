@@ -226,7 +226,7 @@ const LoginPage: React.FC = () => {
               </div>
               
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Vada Health
+                SSC Salud
               </h1>
               <p className="text-lg text-gray-600 dark:text-slate-400 mb-1">
                 Sistema de Salud Digital
