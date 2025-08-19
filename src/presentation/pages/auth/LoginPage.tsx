@@ -8,11 +8,9 @@ import {
   Activity, 
   Stethoscope, 
   Shield, 
-  Users, 
   Zap,
   Lock,
   CheckCircle2,
-  Building2,
   Plus
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -226,7 +224,7 @@ const LoginPage: React.FC = () => {
               </div>
               
               <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                SSC Salud
+                VadaSoft
               </h1>
               <p className="text-lg text-gray-600 dark:text-slate-400 mb-1">
                 Sistema de Salud Digital
@@ -236,17 +234,7 @@ const LoginPage: React.FC = () => {
               </p>
             </div>
             
-            {/* Características del sistema */}
-            <div className="grid grid-cols-2 gap-4 mb-8">
-              <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <Building2 className="h-6 w-6 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <p className="text-xs text-blue-700 dark:text-blue-300 font-medium">Efectores</p>
-              </div>
-              <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                <Users className="h-6 w-6 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                <p className="text-xs text-green-700 dark:text-green-300 font-medium">Pacientes</p>
-              </div>
-            </div>
+
             
             {/* Formulario */}
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>

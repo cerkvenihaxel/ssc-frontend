@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, Search, AlertCircle, CheckCircle, ArrowLeft, Save, Upload, FileText, X } from 'lucide-react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Plus, Minus, Search, AlertCircle, ArrowLeft, Save, Upload, FileText, X } from 'lucide-react';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import Input from '../../../../shared/components/ui/Input';
@@ -38,10 +38,8 @@ interface OrderItem {
   articleId: string;
   articleName: string;
   articleCode: string;
-  articlePrice: number;
   quantity: number;
   justification: string;
-  totalPrice: number;
 }
 
 interface FormData {
@@ -64,6 +62,10 @@ const MedicalOrderCreatePage: React.FC = () => {
   const navigate = useNavigate();
   const { obfuscatedApiClient } = useObfuscation();
   const { user } = useAuth();
+  const { id } = useParams<{ id: string }>();
+  
+  // Determinar si estamos en modo edición
+  const isEditMode = !!id;
   
   const [loading, setLoading] = useState(false);
   const [articulos, setArticulos] = useState<Articulo[]>([]);
@@ -72,6 +74,14 @@ const MedicalOrderCreatePage: React.FC = () => {
   const [showArticleResults, setShowArticleResults] = useState(false);
   const [healthcareProviders, setHealthcareProviders] = useState<{ healthcareProviderId: string; name: string }[]>([]);
   const [selectedAffiliate, setSelectedAffiliate] = useState<any>(null);
+  const [loadingOrder, setLoadingOrder] = useState(false);
+
+  // Cargar datos del pedido si estamos en modo edición
+  useEffect(() => {
+    if (isEditMode && id) {
+      loadExistingOrder();
+    }
+  }, [isEditMode, id]);
 
   // Detectar tipo de usuario y autocompletar
   const getUserTypeAndName = () => {
@@ -121,6 +131,70 @@ const MedicalOrderCreatePage: React.FC = () => {
     }
   }, [user]);
 
+  // Cargar pedido existente para edición
+  const loadExistingOrder = async () => {
+    if (!id) return;
+    
+    try {
+      setLoadingOrder(true);
+      const response = await obfuscatedApiClient.get(`/medical-orders/${id}`) as any;
+      
+      console.log('📥 Datos del pedido para edición:', response);
+      
+      // Transformar datos del backend al formato del formulario
+      const orderData = {
+        affiliateId: response.affiliateId,
+        healthcareProviderId: response.healthcareProviderId,
+        requesterType: response.requesterType?.toUpperCase() || 'ADMIN',
+        requesterName: response.requesterName || '',
+        urgencyLevel: (response.urgency?.name === 'Baja' ? 'LOW' :
+                     response.urgency?.name === 'Normal' ? 'MEDIUM' :
+                     response.urgency?.name === 'Alta' ? 'HIGH' :
+                     response.urgency?.name === 'Urgente' ? 'URGENT' :
+                     response.urgency?.name === 'Crítica' ? 'CRITICAL' : 'MEDIUM') as FormData['urgencyLevel'],
+        authorizationType: (response.authorizationType === 'manual' ? 'MANUAL' :
+                          response.authorizationType === 'automatic' ? 'AI' : 'HYBRID') as FormData['authorizationType'],
+        medicalJustification: response.medicalJustification || '',
+        observations: response.description || '',
+        diagnosis: response.diagnosis || '',
+        treatmentPlan: response.treatmentPlan || '',
+        estimatedDurationDays: response.estimatedDurationDays,
+        attachments: [],
+        items: (response.items || []).map((item: any) => ({
+          id: item.itemId,
+          articleId: item.itemId,
+          articleName: item.itemName,
+          articleCode: item.itemCode,
+          quantity: item.requestedQuantity,
+          justification: item.medicalJustification || ''
+        }))
+      };
+      
+      setFormData(orderData);
+      
+      // Cargar información del afiliado
+      if (response.affiliateId) {
+        try {
+          const affiliateResponse = await obfuscatedApiClient.get(`/affiliates/${response.affiliateId}`) as any;
+          setSelectedAffiliate(affiliateResponse);
+          
+          // Cargar proveedores de salud del afiliado
+          if (affiliateResponse.healthcareProviders) {
+            setHealthcareProviders(affiliateResponse.healthcareProviders);
+          }
+        } catch (error) {
+          console.error('Error loading affiliate data:', error);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error loading medical order for editing:', error);
+      alert('Error al cargar el pedido para edición');
+    } finally {
+      setLoadingOrder(false);
+    }
+  };
+
   // Buscar artículos
   const searchArticles = async (searchTerm: string) => {
     if (!searchTerm.trim()) {
@@ -165,10 +239,8 @@ const MedicalOrderCreatePage: React.FC = () => {
       articleId: articulo.articuloId,
       articleName: articulo.nombre,
       articleCode: articulo.codigo,
-      articlePrice: articulo.precio,
       quantity: 1,
       justification: '',
-      totalPrice: articulo.precio
     };
 
     setFormData(prev => ({
@@ -197,7 +269,7 @@ const MedicalOrderCreatePage: React.FC = () => {
       ...prev,
       items: prev.items.map(item =>
         item.id === itemId
-          ? { ...item, quantity, totalPrice: item.articlePrice * quantity }
+          ? { ...item, quantity }
           : item
       )
     }));
@@ -219,8 +291,8 @@ const MedicalOrderCreatePage: React.FC = () => {
     }));
   };
 
-  const calculateTotal = () => {
-    return formData.items.reduce((total, item) => total + item.totalPrice, 0);
+  const calculateTotalQuantity = () => {
+    return formData.items.reduce((total, item) => total + item.quantity, 0);
   };
 
   const getSelectedAffiliate = () => {
@@ -404,7 +476,7 @@ const MedicalOrderCreatePage: React.FC = () => {
         treatmentPlan: formData.treatmentPlan,
         estimatedDurationDays: formData.estimatedDurationDays,
         hasAttachments: formData.attachments.length > 0,
-        estimatedCost: calculateTotal(),
+        estimatedCost: 0,
         authorizationType: mapAuthorizationType(formData.authorizationType),
         items: formData.items.map(item => {
           // Buscar el artículo original para detectar su categoría
@@ -430,18 +502,26 @@ const MedicalOrderCreatePage: React.FC = () => {
             concentration: '',
             administrationRoute: categoryInfo.administrationRoute,
             medicalJustification: item.justification || `${categoryInfo.itemType === 'medication' ? 'Medicamento' : 'Artículo'} requerido según prescripción médica`,
-            estimatedUnitCost: item.articlePrice
+            estimatedUnitCost: 0 // No precio estimado por unidad
           };
         })
       };
 
       console.log('Enviando pedido:', orderData);
       
-      // Llamada real a la API
-      const response = await obfuscatedApiClient.post('/medical-orders', orderData);
+      let response;
+      if (isEditMode) {
+        // Actualizar pedido existente
+        response = await obfuscatedApiClient.put(`/medical-orders/${id}`, orderData);
+        console.log('Pedido actualizado exitosamente:', response);
+        alert('Pedido médico actualizado exitosamente');
+      } else {
+        // Crear nuevo pedido
+        response = await obfuscatedApiClient.post('/medical-orders', orderData);
+        console.log('Pedido creado exitosamente:', response);
+        alert('Pedido médico creado exitosamente');
+      }
       
-      console.log('Pedido creado exitosamente:', response);
-      alert('Pedido médico creado exitosamente');
       navigate('/admin/medical-orders');
       
     } catch (error) {
@@ -495,8 +575,22 @@ const MedicalOrderCreatePage: React.FC = () => {
     setHealthcareProviders(providers);
   };
 
+  // Mostrar loading mientras se carga el pedido para edición
+  if (loadingOrder) {
+    return (
+      <BaseLayout title={isEditMode ? "Editar Pedido Médico" : "Crear Pedido Médico"}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-slate-400">Cargando pedido para edición...</p>
+          </div>
+        </div>
+      </BaseLayout>
+    );
+  }
+
   return (
-    <BaseLayout title="Crear Pedido Médico">
+    <BaseLayout title={isEditMode ? "Editar Pedido Médico" : "Crear Pedido Médico"}>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -513,10 +607,13 @@ const MedicalOrderCreatePage: React.FC = () => {
 
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Crear Nuevo Pedido Médico
+            {isEditMode ? 'Editar Pedido Médico' : 'Crear Nuevo Pedido Médico'}
           </h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
-            Complete la información del pedido y agregue los artículos necesarios
+            {isEditMode 
+              ? 'Modifique la información del pedido según sea necesario'
+              : 'Complete la información del pedido y agregue los artículos necesarios'
+            }
           </p>
         </div>
 
@@ -885,9 +982,9 @@ const MedicalOrderCreatePage: React.FC = () => {
                         <div className="font-medium text-gray-900 dark:text-white">
                           {item.articleName}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-slate-400">
-                          {item.articleCode} - {formatPrice(item.articlePrice)} c/u
-                        </div>
+                                              <div className="text-sm text-gray-500 dark:text-slate-400">
+                        {item.articleCode}
+                      </div>
                       </div>
 
                       <div>
@@ -924,7 +1021,7 @@ const MedicalOrderCreatePage: React.FC = () => {
 
                       <div className="text-right">
                         <div className="font-medium text-gray-900 dark:text-white">
-                          {formatPrice(item.totalPrice)}
+                          {item.quantity}
                         </div>
                         <Button
                           type="button"
@@ -991,10 +1088,10 @@ const MedicalOrderCreatePage: React.FC = () => {
 
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">
-                    {formatPrice(calculateTotal())}
+                    {calculateTotalQuantity()}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-slate-400">
-                    Costo Total
+                    Cantidad Total
                   </div>
                 </div>
               </div>
@@ -1021,7 +1118,7 @@ const MedicalOrderCreatePage: React.FC = () => {
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Crear Pedido
+                  {isEditMode ? 'Actualizar Pedido' : 'Crear Pedido'}
                 </>
               )}
             </Button>

@@ -19,7 +19,6 @@ interface MedicalOrder {
   requesterName: string;
   state: 'DRAFT' | 'PENDING' | 'AUTHORIZED' | 'PARTIALLY_AUTHORIZED' | 'REJECTED' | 'IN_PREPARATION' | 'READY' | 'DELIVERED' | 'COMPLETED';
   urgencyLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL';
-  totalAmount: number;
   justification: string;
   aiAnalysis?: {
     status: 'APPROVED' | 'REJECTED' | 'NEEDS_REVIEW';
@@ -87,7 +86,7 @@ const MedicalOrderListPage: React.FC = () => {
           requesterName: order.requesterName,
           state: mapBackendStateToFrontend(order.authorizationStatus),
           urgencyLevel: mapBackendUrgencyToFrontend(order.urgency?.name),
-          totalAmount: order.estimatedCost || 0,
+          // totalAmount removed - no longer tracking costs
           justification: order.medicalJustification,
           aiAnalysis: order.aiAnalysisResult ? {
             status: order.authorizationStatus === 'approved' ? 'APPROVED' : 
@@ -107,7 +106,7 @@ const MedicalOrderListPage: React.FC = () => {
           pending: transformedOrders.filter(o => o.state === 'PENDING').length,
           authorized: transformedOrders.filter(o => o.state === 'AUTHORIZED').length,
           rejected: transformedOrders.filter(o => o.state === 'REJECTED').length,
-          totalAmount: transformedOrders.reduce((sum, o) => sum + o.totalAmount, 0)
+          totalAmount: 0 // No longer tracking costs
         });
         
       } catch (error) {
@@ -222,12 +221,7 @@ const MedicalOrderListPage: React.FC = () => {
     );
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS'
-    }).format(amount);
-  };
+  // Función formatCurrency removida - no se manejan precios
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-AR', {
@@ -407,10 +401,10 @@ const MedicalOrderListPage: React.FC = () => {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 dark:text-slate-400 truncate">
-                      Monto Total
+                      Total de Pedidos
                     </dt>
                     <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                      {formatCurrency(stats.totalAmount)}
+                      {stats.total}
                     </dd>
                   </dl>
                 </div>
@@ -536,9 +530,6 @@ const MedicalOrderListPage: React.FC = () => {
                     Urgencia
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                    Monto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Fecha
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
@@ -590,11 +581,6 @@ const MedicalOrderListPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getUrgencyBadge(order.urgencyLevel)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatCurrency(order.totalAmount)}
-                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, RefreshCw, CheckCircle, XCircle, AlertTriangle, Eye, Clock, TrendingUp, BarChart3 } from 'lucide-react';
+import { Bot, RefreshCw, CheckCircle, XCircle, AlertTriangle, Eye, TrendingUp, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
@@ -11,7 +11,6 @@ interface AIAnalysisOrder {
   orderNumber: string;
   affiliateName: string;
   requesterName: string;
-  totalAmount: number;
   urgencyLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT' | 'CRITICAL';
   createdAt: string;
   aiAnalysis: {
@@ -21,11 +20,6 @@ interface AIAnalysisOrder {
     analyzedAt: string;
     riskFactors: string[];
     recommendations: string[];
-    costAnalysis: {
-      totalRequested: number;
-      recommendedAmount: number;
-      potentialSavings: number;
-    };
   };
 }
 
@@ -35,7 +29,6 @@ interface AIReviewStats {
   rejected: number;
   needsReview: number;
   averageConfidence: number;
-  totalSavings: number;
 }
 
 const MedicalOrderAIReviewPage: React.FC = () => {
@@ -46,7 +39,6 @@ const MedicalOrderAIReviewPage: React.FC = () => {
     rejected: 0,
     needsReview: 0,
     averageConfidence: 0,
-    totalSavings: 0
   });
   const [loading, setLoading] = useState(true);
   const [analyzingAll, setAnalyzingAll] = useState(false);
@@ -68,7 +60,6 @@ const MedicalOrderAIReviewPage: React.FC = () => {
             orderNumber: 'ORD-2024-001',
             affiliateName: 'Juan Pérez',
             requesterName: 'Dr. Ana García',
-            totalAmount: 15000,
             urgencyLevel: 'HIGH',
             createdAt: '2024-01-15T10:30:00Z',
             aiAnalysis: {
@@ -84,12 +75,7 @@ const MedicalOrderAIReviewPage: React.FC = () => {
                 'Revisar justificación para 8 drenajes torácicos',
                 'Considerar reducir cantidad a 2-3 drenajes',
                 'Verificar protocolos hospitalarios'
-              ],
-              costAnalysis: {
-                totalRequested: 15000,
-                recommendedAmount: 12000,
-                potentialSavings: 3000
-              }
+              ]
             }
           },
           {
@@ -97,7 +83,6 @@ const MedicalOrderAIReviewPage: React.FC = () => {
             orderNumber: 'ORD-2024-002',
             affiliateName: 'María González',
             requesterName: 'Dr. Carlos Ruiz',
-            totalAmount: 8500,
             urgencyLevel: 'MEDIUM',
             createdAt: '2024-01-14T14:20:00Z',
             aiAnalysis: {
@@ -109,12 +94,7 @@ const MedicalOrderAIReviewPage: React.FC = () => {
               recommendations: [
                 'Monitorear glucemia post-tratamiento',
                 'Considerar ajustes de dosis según respuesta'
-              ],
-              costAnalysis: {
-                totalRequested: 8500,
-                recommendedAmount: 8500,
-                potentialSavings: 0
-              }
+              ]
             }
           },
           {
@@ -122,7 +102,6 @@ const MedicalOrderAIReviewPage: React.FC = () => {
             orderNumber: 'ORD-2024-003',
             affiliateName: 'Pedro Martínez',
             requesterName: 'Lic. Laura Fernández',
-            totalAmount: 25000,
             urgencyLevel: 'LOW',
             createdAt: '2024-01-13T09:15:00Z',
             aiAnalysis: {
@@ -139,12 +118,7 @@ const MedicalOrderAIReviewPage: React.FC = () => {
                 'Solicitar justificación médica detallada',
                 'Considerar alternativas más económicas',
                 'Revisar protocolos de autorización'
-              ],
-              costAnalysis: {
-                totalRequested: 25000,
-                recommendedAmount: 0,
-                potentialSavings: 25000
-              }
+              ]
             }
           },
           {
@@ -152,7 +126,6 @@ const MedicalOrderAIReviewPage: React.FC = () => {
             orderNumber: 'ORD-2024-004',
             affiliateName: 'Ana Rodríguez',
             requesterName: 'Dr. Miguel Torres',
-            totalAmount: 42000,
             urgencyLevel: 'URGENT',
             createdAt: '2024-01-12T16:45:00Z',
             aiAnalysis: {
@@ -169,12 +142,7 @@ const MedicalOrderAIReviewPage: React.FC = () => {
                 'Revisión por especialista en cirugía cardiovascular',
                 'Validar protocolo quirúrgico',
                 'Confirmar disponibilidad de equipo especializado'
-              ],
-              costAnalysis: {
-                totalRequested: 42000,
-                recommendedAmount: 38000,
-                potentialSavings: 4000
-              }
+              ]
             }
           }
         ];
@@ -187,7 +155,6 @@ const MedicalOrderAIReviewPage: React.FC = () => {
         const rejected = mockOrders.filter(o => o.aiAnalysis.status === 'REJECTED').length;
         const needsReview = mockOrders.filter(o => o.aiAnalysis.status === 'NEEDS_REVIEW').length;
         const averageConfidence = mockOrders.reduce((sum, o) => sum + o.aiAnalysis.confidence, 0) / totalAnalyzed;
-        const totalSavings = mockOrders.reduce((sum, o) => sum + o.aiAnalysis.costAnalysis.potentialSavings, 0);
 
         setStats({
           totalAnalyzed,
@@ -195,7 +162,6 @@ const MedicalOrderAIReviewPage: React.FC = () => {
           rejected,
           needsReview,
           averageConfidence,
-          totalSavings
         });
 
       } catch (error) {
@@ -279,13 +245,6 @@ const MedicalOrderAIReviewPage: React.FC = () => {
         {percentage}%
       </span>
     );
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS'
-    }).format(price);
   };
 
   const formatDate = (dateString: string) => {
@@ -453,10 +412,10 @@ const MedicalOrderAIReviewPage: React.FC = () => {
                 <div className="ml-5 w-0 flex-1">
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 dark:text-slate-400 truncate">
-                      Ahorros Potenciales
+                      Confianza Promedio
                     </dt>
                     <dd className="text-lg font-medium text-gray-900 dark:text-white">
-                      {formatPrice(stats.totalSavings)}
+                      {Math.round(stats.averageConfidence * 100)}%
                     </dd>
                   </dl>
                 </div>
@@ -542,7 +501,7 @@ const MedicalOrderAIReviewPage: React.FC = () => {
                     Confianza
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                    Análisis de Costos
+                    Recomendaciones
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Analizado
@@ -585,17 +544,26 @@ const MedicalOrderAIReviewPage: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {getConfidenceBadge(order.aiAnalysis.confidence)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900 dark:text-white">
-                          <div>Solicitado: {formatPrice(order.aiAnalysis.costAnalysis.totalRequested)}</div>
-                          <div>Recomendado: {formatPrice(order.aiAnalysis.costAnalysis.recommendedAmount)}</div>
-                          {order.aiAnalysis.costAnalysis.potentialSavings > 0 && (
-                            <div className="text-green-600 font-medium">
-                              Ahorro: {formatPrice(order.aiAnalysis.costAnalysis.potentialSavings)}
-                            </div>
-                          )}
-                        </div>
-                      </td>
+                                              <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-white">
+                            {order.aiAnalysis.recommendations.length > 0 ? (
+                              <div className="space-y-1">
+                                {order.aiAnalysis.recommendations.slice(0, 2).map((rec, index) => (
+                                  <div key={index} className="text-xs text-blue-600 dark:text-blue-400">
+                                    • {rec}
+                                  </div>
+                                ))}
+                                {order.aiAnalysis.recommendations.length > 2 && (
+                                  <div className="text-xs text-gray-500 dark:text-slate-400">
+                                    +{order.aiAnalysis.recommendations.length - 2} más...
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 dark:text-slate-400">Sin recomendaciones</span>
+                            )}
+                          </div>
+                        </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 dark:text-white">
                           {formatDate(order.aiAnalysis.analyzedAt)}

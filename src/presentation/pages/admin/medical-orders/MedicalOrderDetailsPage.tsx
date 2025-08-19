@@ -11,13 +11,17 @@ import {
   User, 
   FileText,
   AlertCircle,
-  Eye,
   Activity,
-  Calendar,
   CreditCard,
   Package,
   Stethoscope,
-  TrendingUp
+  Download,
+  Folder,
+  File,
+  Image,
+  FileVideo,
+  FileAudio,
+  Archive
 } from 'lucide-react';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
@@ -32,8 +36,6 @@ interface MedicalOrderItem {
   articleCode: string;
   articleDescription?: string;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
   justification: string;
   authorizationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   aiRecommendation?: {
@@ -41,6 +43,16 @@ interface MedicalOrderItem {
     confidence: number;
     reasoning: string;
   };
+}
+
+interface Attachment {
+  id: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  uploadedAt: string;
+  uploadedBy: string;
+  downloadUrl?: string;
 }
 
 interface MedicalOrder {
@@ -57,10 +69,9 @@ interface MedicalOrder {
   authorizationType: 'MANUAL' | 'AI' | 'HYBRID';
   medicalJustification: string;
   observations?: string;
-  totalAmount: number;
-  approvedAmount?: number;
-  rejectedAmount?: number;
+  // Campos de precio removidos - no se manejan precios
   items: MedicalOrderItem[];
+  attachments: Attachment[];
   aiAnalysis?: {
     status: 'APPROVED' | 'REJECTED' | 'NEEDS_REVIEW';
     confidence: number;
@@ -138,6 +149,16 @@ const MedicalOrderDetailsPage: React.FC = () => {
     return authMap[backendType] || 'MANUAL';
   };
 
+  // Función para limpiar items duplicados
+  const removeDuplicateItems = (items: any[]) => {
+    const seen = new Set();
+    return items.filter(item => {
+      const duplicate = seen.has(item.itemId);
+      seen.add(item.itemId);
+      return !duplicate;
+    });
+  };
+
   // Cargar datos del pedido
   const loadOrder = async () => {
     try {
@@ -146,6 +167,13 @@ const MedicalOrderDetailsPage: React.FC = () => {
       
       // Llamada real a la API
       const response = await obfuscatedApiClient.get(`/medical-orders/${id}`) as any;
+      
+      console.log('📥 Datos recibidos del backend:', response);
+      console.log('📦 Items del backend:', response.items);
+      
+      // Limpiar items duplicados del backend
+      const cleanedItems = removeDuplicateItems(response.items || []);
+      console.log('🧹 Items después de limpiar duplicados:', cleanedItems);
       
       // Transformar datos del backend al formato frontend
       const transformedOrder: MedicalOrder = {
@@ -162,28 +190,46 @@ const MedicalOrderDetailsPage: React.FC = () => {
         authorizationType: mapBackendAuthTypeToFrontend(response.authorizationType),
         medicalJustification: response.medicalJustification || '',
         observations: response.description || '',
-        totalAmount: response.estimatedCost || 0,
-        approvedAmount: response.approvedCost || 0,
-        rejectedAmount: 0, // Calcular si es necesario
-                  items: (response.items || []).map((item: any) => ({
+        // Campos de precio removidos - no se manejan precios
+        items: (() => {
+          const transformedItems = cleanedItems.map((item: any) => ({
             id: item.itemId,
             articleId: item.itemId,
             articleName: item.itemName,
             articleCode: item.itemCode,
             articleDescription: item.itemDescription,
             quantity: item.requestedQuantity,
-            unitPrice: parseFloat(item.estimatedUnitCost || '0'),
-            totalPrice: item.requestedQuantity * parseFloat(item.estimatedUnitCost || '0'),
             justification: item.medicalJustification || '',
-            authorizationStatus: item.itemStatus === 'approved' ? 'APPROVED' : 
-                               item.itemStatus === 'rejected' ? 'REJECTED' : 'PENDING',
+            authorizationStatus: (item.itemStatus === 'approved' ? 'APPROVED' : 
+                               item.itemStatus === 'rejected' ? 'REJECTED' : 'PENDING') as 'PENDING' | 'APPROVED' | 'REJECTED',
             aiRecommendation: item.aiAnalysis ? {
-              status: item.aiAnalysis.decision === 'approved' ? 'APPROVED' : 
-                     item.aiAnalysis.decision === 'rejected' ? 'REJECTED' : 'NEEDS_REVIEW',
+              status: (item.aiAnalysis.decision === 'approved' ? 'APPROVED' : 
+                     item.aiAnalysis.decision === 'rejected' ? 'REJECTED' : 'NEEDS_REVIEW') as 'APPROVED' | 'REJECTED' | 'NEEDS_REVIEW',
               confidence: item.aiAnalysis.confidence || 0,
               reasoning: item.aiAnalysis.reasoning || 'No AI analysis for this item'
             } : undefined
-          })),
+          }));
+          
+          console.log('🔄 Items transformados:', transformedItems);
+          
+          // Verificar duplicados
+          const itemIds = transformedItems.map(item => item.id);
+          const uniqueIds = new Set(itemIds);
+          if (itemIds.length !== uniqueIds.size) {
+            console.warn('⚠️ Se detectaron items duplicados en la respuesta del backend:', transformedItems);
+          }
+          
+          return transformedItems;
+        })(),
+        attachments: (response.attachments || []).map((attachment: any) => ({
+          id: attachment.id || attachment.attachmentId,
+          fileName: attachment.fileName || attachment.name,
+          fileSize: attachment.fileSize || attachment.size || 0,
+          fileType: attachment.fileType || attachment.type || 'application/octet-stream',
+          uploadedAt: attachment.uploadedAt || attachment.createdAt,
+          uploadedBy: attachment.uploadedBy || attachment.uploaderName || 'Usuario',
+          downloadUrl: attachment.downloadUrl || attachment.url
+        })),
         aiAnalysis: response.aiAnalysisResult ? {
           status: response.authorizationStatus === 'approved' ? 'APPROVED' : 
                  response.authorizationStatus === 'rejected' ? 'REJECTED' : 'NEEDS_REVIEW',
@@ -352,12 +398,7 @@ const MedicalOrderDetailsPage: React.FC = () => {
     );
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS'
-    }).format(price);
-  };
+  // Función formatPrice removida - no se manejan precios
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-AR', {
@@ -367,6 +408,35 @@ const MedicalOrderDetailsPage: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getFileIcon = (fileType: string) => {
+    if (fileType.startsWith('image/')) return Image;
+    if (fileType.startsWith('video/')) return FileVideo;
+    if (fileType.startsWith('audio/')) return FileAudio;
+    if (fileType.includes('pdf')) return FileText;
+    if (fileType.includes('zip') || fileType.includes('rar') || fileType.includes('7z')) return Archive;
+    return File;
+  };
+
+  const getFileTypeName = (fileType: string) => {
+    if (fileType.startsWith('image/')) return 'Imagen';
+    if (fileType.startsWith('video/')) return 'Video';
+    if (fileType.startsWith('audio/')) return 'Audio';
+    if (fileType.includes('pdf')) return 'PDF';
+    if (fileType.includes('doc') || fileType.includes('docx')) return 'Documento Word';
+    if (fileType.includes('xls') || fileType.includes('xlsx')) return 'Hoja de cálculo';
+    if (fileType.includes('ppt') || fileType.includes('pptx')) return 'Presentación';
+    if (fileType.includes('zip') || fileType.includes('rar') || fileType.includes('7z')) return 'Archivo comprimido';
+    return 'Documento';
   };
 
   if (loading) {
@@ -583,34 +653,24 @@ const MedicalOrderDetailsPage: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Resumen Financiero */}
+            {/* Resumen del Pedido */}
             <div className="bg-white dark:bg-darkmode-600 rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-                Resumen Financiero
+                Resumen del Pedido
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-slate-400">Total Solicitado:</span>
+                  <span className="text-gray-500 dark:text-slate-400">Total de Artículos:</span>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    {formatPrice(order.totalAmount)}
+                    {order.items.length}
                   </span>
                 </div>
-                {order.approvedAmount && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-slate-400">Monto Aprobado:</span>
-                    <span className="font-medium text-green-600">
-                      {formatPrice(order.approvedAmount)}
-                    </span>
-                  </div>
-                )}
-                {order.rejectedAmount && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-slate-400">Monto Rechazado:</span>
-                    <span className="font-medium text-red-600">
-                      {formatPrice(order.rejectedAmount)}
-                    </span>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-500 dark:text-slate-400">Cantidad Total:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">
+                    {order.items.reduce((sum, item) => sum + item.quantity, 0)}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -676,12 +736,6 @@ const MedicalOrderDetailsPage: React.FC = () => {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Cantidad
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                    Precio Unitario
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
-                    Total
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
                     Estado
@@ -763,12 +817,6 @@ const MedicalOrderDetailsPage: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                       {item.quantity}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      {formatPrice(item.unitPrice)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                      {formatPrice(item.totalPrice)}
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getItemStatusBadge(item.authorizationStatus)}
                     </td>
@@ -776,6 +824,76 @@ const MedicalOrderDetailsPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Archivos Adjuntos */}
+        <div className="bg-white dark:bg-darkmode-600 rounded-lg shadow overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-darkmode-400">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              Archivos Adjuntos ({order.attachments.length})
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+              Documentos y archivos relacionados con este pedido médico
+            </p>
+          </div>
+          
+          <div className="p-6">
+            {order.attachments.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {order.attachments.map((attachment) => {
+                  const FileIcon = getFileIcon(attachment.fileType);
+                  return (
+                    <div key={attachment.id} className="border border-gray-200 dark:border-darkmode-400 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-darkmode-700 transition-colors">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+                            <FileIcon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              {attachment.fileName}
+                            </h4>
+                            {attachment.downloadUrl && (
+                              <button
+                                onClick={() => window.open(attachment.downloadUrl, '_blank')}
+                                className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 p-1 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                title="Descargar archivo"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                            {getFileTypeName(attachment.fileType)} • {formatFileSize(attachment.fileSize)}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                            Subido por {attachment.uploadedBy} • {formatDate(attachment.uploadedAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-darkmode-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Folder className="w-8 h-8 text-gray-400 dark:text-slate-500" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  No hay archivos adjuntos
+                </h4>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+                  Aún no se han cargado archivos para este pedido médico.
+                </p>
+                <div className="text-xs text-gray-400 dark:text-slate-500">
+                  Los archivos pueden incluir: prescripciones médicas, estudios, informes, etc.
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

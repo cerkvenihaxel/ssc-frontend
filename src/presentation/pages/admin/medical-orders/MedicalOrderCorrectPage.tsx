@@ -3,13 +3,11 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Save, 
-  Bot, 
   AlertTriangle, 
   CheckCircle, 
   XCircle, 
   Edit, 
-  Trash2,
-  Plus
+  Trash2
 } from 'lucide-react';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
@@ -23,8 +21,6 @@ interface MedicalOrderItem {
   articleCode: string;
   articleDescription?: string;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
   justification: string;
   authorizationStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   aiRecommendation?: {
@@ -88,6 +84,21 @@ const MedicalOrderCorrectPage: React.FC = () => {
   const [requestNewAiAnalysis, setRequestNewAiAnalysis] = useState(true);
   const [itemCorrections, setItemCorrections] = useState<ItemCorrection[]>([]);
 
+  // Monitorear correcciones para detectar duplicados
+  useEffect(() => {
+    const itemIds = itemCorrections.map(c => c.itemId);
+    const uniqueIds = new Set(itemIds);
+    
+    if (itemIds.length !== uniqueIds.size) {
+      console.warn('⚠️ Se detectaron correcciones duplicadas:', itemCorrections);
+      // Remover duplicados manteniendo solo la primera ocurrencia
+      const uniqueCorrections = itemCorrections.filter((correction, index, self) => 
+        index === self.findIndex(c => c.itemId === correction.itemId)
+      );
+      setItemCorrections(uniqueCorrections);
+    }
+  }, [itemCorrections]);
+
   // Cargar datos del pedido
   const loadOrder = async () => {
     try {
@@ -121,8 +132,6 @@ const MedicalOrderCorrectPage: React.FC = () => {
           articleCode: item.itemCode,
           articleDescription: item.itemDescription,
           quantity: item.requestedQuantity,
-          unitPrice: parseFloat(item.estimatedUnitCost || '0'),
-          totalPrice: item.requestedQuantity * parseFloat(item.estimatedUnitCost || '0'),
           justification: item.medicalJustification || '',
           authorizationStatus: item.itemStatus === 'approved' ? 'APPROVED' : 
                              item.itemStatus === 'rejected' ? 'REJECTED' : 'PENDING',
@@ -215,6 +224,13 @@ const MedicalOrderCorrectPage: React.FC = () => {
     const item = order?.items.find(i => i.id === itemId);
     if (!item) return;
 
+    // Verificar si ya existe una corrección para este item
+    const existingCorrection = itemCorrections.find(c => c.itemId === itemId);
+    if (existingCorrection) {
+      // Si ya existe, no agregar otra
+      return;
+    }
+
     const newCorrection: ItemCorrection = {
       itemId,
       action: 'modify',
@@ -223,17 +239,34 @@ const MedicalOrderCorrectPage: React.FC = () => {
       correctionReason: ''
     };
 
-    setItemCorrections(prev => [...prev, newCorrection]);
+    setItemCorrections(prev => {
+      const updated = [...prev, newCorrection];
+      console.log('✅ Corrección agregada para item:', itemId, 'Total correcciones:', updated.length);
+      return updated;
+    });
   };
 
   const handleRemoveItemCorrection = (itemId: string) => {
-    setItemCorrections(prev => prev.filter(c => c.itemId !== itemId));
+    setItemCorrections(prev => {
+      const filtered = prev.filter(c => c.itemId !== itemId);
+      console.log('❌ Corrección removida para item:', itemId, 'Total correcciones:', filtered.length);
+      return filtered;
+    });
   };
 
   const handleUpdateItemCorrection = (itemId: string, updates: Partial<ItemCorrection>) => {
-    setItemCorrections(prev => 
-      prev.map(c => c.itemId === itemId ? { ...c, ...updates } : c)
-    );
+    setItemCorrections(prev => {
+      const existingIndex = prev.findIndex(c => c.itemId === itemId);
+      if (existingIndex === -1) {
+        // Si no existe la corrección, no hacer nada
+        return prev;
+      }
+      
+      // Actualizar solo la corrección existente
+      const updatedCorrections = [...prev];
+      updatedCorrections[existingIndex] = { ...updatedCorrections[existingIndex], ...updates };
+      return updatedCorrections;
+    });
   };
 
   const handleSubmitCorrections = async () => {
@@ -247,16 +280,26 @@ const MedicalOrderCorrectPage: React.FC = () => {
     try {
       setSubmitting(true);
       
+      // Filtrar correcciones válidas y remover duplicados
+      const validCorrections = itemCorrections
+        .filter(c => c.correctionReason.trim())
+        .filter((correction, index, self) => 
+          index === self.findIndex(c => c.itemId === correction.itemId)
+        );
+
+      console.log('📋 Correcciones antes del filtrado:', itemCorrections);
+      console.log('✅ Correcciones válidas después del filtrado:', validCorrections);
+
       const correctionData = {
         medicalJustification: medicalJustification !== order.medicalJustification ? medicalJustification : undefined,
         diagnosis: diagnosis.trim() || undefined,
         treatmentPlan: treatmentPlan.trim() || undefined,
-        itemCorrections: itemCorrections.filter(c => c.correctionReason.trim()),
+        itemCorrections: validCorrections,
         correctionNotes: correctionNotes.trim(),
         requestNewAiAnalysis
       };
 
-      console.log('Enviando correcciones:', correctionData);
+      console.log('🚀 Enviando correcciones al backend:', correctionData);
       
       const response = await obfuscatedApiClient.post(`/medical-orders/${order.id}/correct`, correctionData);
       
@@ -537,6 +580,7 @@ const MedicalOrderCorrectPage: React.FC = () => {
                           onClick={() => handleAddItemCorrection(item.id)}
                           variant="outline-primary"
                           size="sm"
+                          disabled={itemCorrections.some(c => c.itemId === item.id)}
                         >
                           <Edit className="w-4 h-4 mr-1" />
                           Corregir
