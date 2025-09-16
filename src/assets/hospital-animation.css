@@ -1,0 +1,191 @@
+/* Professional Hospital Background Animation */
+.hospital-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  perspective: 1000px;
+  transition: transform 0.2s ease-out;
+  will-change: transform;
+}
+
+.hospital-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 30% 20%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+  animation: subtleBackgroundShift 30s ease-in-out infinite;
+  transition: transform 0.25s ease-out;
+  will-change: transform;
+}
+
+@keyframes subtleBackgroundShift {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg);
+    opacity: 0.8;
+  }
+  50% { 
+    transform: scale(1.05) rotate(1deg);
+    opacity: 1;
+  }
+}
+
+/* Floating Healthcare Emojis with Perspective */
+.floating-emojis {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease-out;
+  will-change: transform;
+}
+
+.floating-emoji {
+  position: absolute;
+  font-size: 2rem;
+  opacity: 0.05;
+  animation: floatWithPerspective 25s infinite linear;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease-out;
+  will-change: transform;
+}
+
+.floating-emoji:nth-child(1) {
+  left: 10%;
+  animation-delay: 0s;
+  animation-duration: 30s;
+}
+
+.floating-emoji:nth-child(2) {
+  left: 25%;
+  animation-delay: 5s;
+  animation-duration: 28s;
+}
+
+.floating-emoji:nth-child(3) {
+  left: 40%;
+  animation-delay: 10s;
+  animation-duration: 32s;
+}
+
+.floating-emoji:nth-child(4) {
+  left: 55%;
+  animation-delay: 15s;
+  animation-duration: 26s;
+}
+
+.floating-emoji:nth-child(5) {
+  left: 70%;
+  animation-delay: 20s;
+  animation-duration: 34s;
+}
+
+.floating-emoji:nth-child(6) {
+  left: 85%;
+  animation-delay: 25s;
+  animation-duration: 29s;
+}
+
+@keyframes floatWithPerspective {
+  from {
+    transform: translateY(110vh) translateZ(-200px) rotateY(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.05;
+  }
+  50% {
+    transform: translateY(50vh) translateZ(0px) rotateY(180deg);
+    opacity: 0.08;
+  }
+  90% {
+    opacity: 0.05;
+  }
+  to {
+    transform: translateY(-10vh) translateZ(-200px) rotateY(360deg);
+    opacity: 0;
+  }
+}
+
+/* Subtle Depth Particles */
+.depth-particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease-out;
+  will-change: transform;
+}
+
+.depth-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  animation: moveWithDepth 40s infinite linear;
+}
+
+.depth-particle:nth-child(1) { left: 15%; animation-delay: 0s; }
+.depth-particle:nth-child(2) { left: 35%; animation-delay: 8s; }
+.depth-particle:nth-child(3) { left: 55%; animation-delay: 16s; }
+.depth-particle:nth-child(4) { left: 75%; animation-delay: 24s; }
+
+@keyframes moveWithDepth {
+  from {
+    transform: translateY(100vh) translateZ(-100px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.1;
+  }
+  80% {
+    opacity: 0.1;
+  }
+  to {
+    transform: translateY(-100px) translateZ(50px);
+    opacity: 0;
+  }
+}
+
+/* Professional Breathing Effect */
+.professional-breathing {
+  animation: professionalBreathe 8s ease-in-out infinite;
+}
+
+@keyframes professionalBreathe {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.01);
+  }
+}
+
+/* Mouse Tracking Card Effect */
+.mouse-tracking-card {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  will-change: transform;
+  transform-style: preserve-3d;
+}
+
+.mouse-tracking-card:hover {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Smooth Container for Mouse Effects */
+.mouse-tracking-container {
+  transition: transform 0.2s ease-out;
+  will-change: transform;
+  transform-style: preserve-3d;
+} 
