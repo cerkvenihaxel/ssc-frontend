@@ -1,4 +1,4 @@
-# 🏥 SSC Salud - Frontend React
+# 🏥 Vada Health - Frontend React
 
 **Frontend React para el Sistema de Servicios de Salud (SSC)**
 
@@ -276,7 +276,7 @@ npm run build
 ### **Variables de Entorno de Producción**
 ```bash
 VITE_API_BASE_URL=https://api.ssc.com
-VITE_APP_NAME=SSC Salud
+VITE_APP_NAME=Vada Health
 VITE_DEV_MODE=false
 ```
 
