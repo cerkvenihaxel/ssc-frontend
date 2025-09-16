@@ -1,51 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Eye, CheckCircle, XCircle, Clock, Brain, FileText, AlertCircle, Users, DollarSign, TrendingUp, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-interface MedicalOrder {
-  orderId: string;
-  orderNumber: string;
-  requesterName: string;
-  requesterType: 'admin' | 'doctor' | 'auditor';
-  affiliateName: string;
-  affiliateNumber: string;
-  healthcareProviderName: string;
-  title: string;
-  urgency: {
-    id: number;
-    name: string;
-    colorCode: string;
-  };
-  authorizationStatus: 'pending' | 'approved' | 'rejected' | 'partial';
-  authorizationType: 'manual' | 'automatic' | 'hybrid';
-  estimatedCost: number;
-  approvedCost?: number;
-  totalItems: number;
-  approvedItems: number;
-  createdAt: string;
-  aiConfidenceScore?: number;
-}
-
-interface Statistics {
-  totalOrders: number;
-  pendingOrders: number;
-  approvedOrders: number;
-  rejectedOrders: number;
-  totalEstimatedCost: number;
-  totalApprovedCost: number;
-}
+import { useMedicalOrders } from '../../../presentation/hooks/useMedicalOrders';
+import { MedicalOrder, MedicalOrderStatistics } from '../../../infrastructure/services/medical-orders.service';
 
 const MedicalOrderListPage: React.FC = () => {
+  const {
+    loading,
+    error,
+    getMedicalOrders,
+    getDashboardStats,
+    authorizeMedicalOrder,
+    aiAuthorizeMedicalOrder
+  } = useMedicalOrders();
+
   const [orders, setOrders] = useState<MedicalOrder[]>([]);
-  const [stats, setStats] = useState<Statistics>({
+  const [stats, setStats] = useState<MedicalOrderStatistics>({
     totalOrders: 0,
     pendingOrders: 0,
     approvedOrders: 0,
     rejectedOrders: 0,
+    partialOrders: 0,
     totalEstimatedCost: 0,
-    totalApprovedCost: 0
+    totalApprovedCost: 0,
+    averageProcessingTime: 0,
+    aiAutomaticApprovalRate: 0
   });
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [requesterTypeFilter, setRequesterTypeFilter] = useState<string>('all');
@@ -53,101 +33,32 @@ const MedicalOrderListPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Datos mock para demostración
-  const mockOrders: MedicalOrder[] = [
-    {
-      orderId: '1',
-      orderNumber: 'MO-2024-000001',
-      requesterName: 'Dr. Juan García',
-      requesterType: 'doctor',
-      affiliateName: 'María Rodríguez',
-      affiliateNumber: 'AF001',
-      healthcareProviderName: 'OSDE',
-      title: 'Medicación para tratamiento de fractura de costilla',
-      urgency: { id: 4, name: 'Urgente', colorCode: '#EF4444' },
-      authorizationStatus: 'pending',
-      authorizationType: 'automatic',
-      estimatedCost: 15000,
-      totalItems: 3,
-      approvedItems: 0,
-      createdAt: '2024-01-15T10:30:00Z',
-      aiConfidenceScore: 0.85
-    },
-    {
-      orderId: '2',
-      orderNumber: 'MO-2024-000002',
-      requesterName: 'Administrador Sistema',
-      requesterType: 'admin',
-      affiliateName: 'Carlos López',
-      affiliateNumber: 'AF002',
-      healthcareProviderName: 'Swiss Medical',
-      title: 'Suministros médicos para cirugía menor',
-      urgency: { id: 2, name: 'Normal', colorCode: '#3B82F6' },
-      authorizationStatus: 'approved',
-      authorizationType: 'automatic',
-      estimatedCost: 25000,
-      approvedCost: 23000,
-      totalItems: 5,
-      approvedItems: 4,
-      createdAt: '2024-01-14T15:45:00Z',
-      aiConfidenceScore: 0.92
-    },
-    {
-      orderId: '3',
-      orderNumber: 'MO-2024-000003',
-      requesterName: 'Dr. Ana Martínez',
-      requesterType: 'doctor',
-      affiliateName: 'José Fernández',
-      affiliateNumber: 'AF003',
-      healthcareProviderName: 'Galeno',
-      title: 'Equipos para terapia respiratoria',
-      urgency: { id: 5, name: 'Crítica', colorCode: '#DC2626' },
-      authorizationStatus: 'rejected',
-      authorizationType: 'manual',
-      estimatedCost: 45000,
-      totalItems: 2,
-      approvedItems: 0,
-      createdAt: '2024-01-13T08:20:00Z'
-    },
-    {
-      orderId: '4',
-      orderNumber: 'MO-2024-000004',
-      requesterName: 'Auditor Principal',
-      requesterType: 'auditor',
-      affiliateName: 'Elena Vargas',
-      affiliateNumber: 'AF004',
-      healthcareProviderName: 'OSDE',
-      title: 'Medicamentos para tratamiento oncológico',
-      urgency: { id: 3, name: 'Alta', colorCode: '#F59E0B' },
-      authorizationStatus: 'partial',
-      authorizationType: 'hybrid',
-      estimatedCost: 85000,
-      approvedCost: 60000,
-      totalItems: 8,
-      approvedItems: 5,
-      createdAt: '2024-01-12T12:10:00Z',
-      aiConfidenceScore: 0.78
-    }
-  ];
-
-  const mockStats: Statistics = {
-    totalOrders: 4,
-    pendingOrders: 1,
-    approvedOrders: 1,
-    rejectedOrders: 1,
-    totalEstimatedCost: 170000,
-    totalApprovedCost: 83000
-  };
-
   useEffect(() => {
-    // Simular carga de datos
-    setLoading(true);
-    setTimeout(() => {
-      setOrders(mockOrders);
-      setStats(mockStats);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    loadData();
+  }, [page, statusFilter, requesterTypeFilter, urgencyFilter, searchTerm]);
+
+  const loadData = async () => {
+    try {
+      // Load orders and stats in parallel
+      const [ordersResponse, statsResponse] = await Promise.all([
+        getMedicalOrders({
+          page,
+          limit: 10,
+          authorizationStatus: statusFilter !== 'all' ? statusFilter : undefined,
+          requesterType: requesterTypeFilter !== 'all' ? requesterTypeFilter : undefined,
+          urgencyId: urgencyFilter !== 'all' ? parseInt(urgencyFilter) : undefined,
+          search: searchTerm || undefined
+        }),
+        getDashboardStats()
+      ]);
+
+      setOrders(ordersResponse.data);
+      setTotalPages(ordersResponse.pagination.totalPages);
+      setStats(statsResponse);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -212,28 +123,75 @@ const MedicalOrderListPage: React.FC = () => {
   };
 
   const handleAuthorize = async (orderId: string) => {
-    // Aquí iría la lógica para autorizar manualmente
-    console.log('Autorizar pedido:', orderId);
-    alert('Funcionalidad de autorización manual - En desarrollo');
+    try {
+      const confirmed = window.confirm('¿Está seguro de que desea aprobar este pedido médico?');
+      if (!confirmed) return;
+
+      await authorizeMedicalOrder(orderId, {
+        decision: 'approve',
+        notes: 'Aprobado manualmente desde la lista de pedidos'
+      });
+      
+      // Reload data to reflect changes
+      await loadData();
+      alert('Pedido médico aprobado exitosamente');
+    } catch (error) {
+      console.error('Error al autorizar pedido:', error);
+      alert('Error al autorizar el pedido médico');
+    }
   };
 
   const handleAIAuthorize = async (orderId: string) => {
-    // Aquí iría la lógica para autorización con IA
-    console.log('Autorizar con IA pedido:', orderId);
-    alert('Funcionalidad de autorización con IA - En desarrollo');
+    try {
+      const confirmed = window.confirm('¿Está seguro de que desea procesar este pedido con IA?');
+      if (!confirmed) return;
+
+      await aiAuthorizeMedicalOrder(orderId);
+      
+      // Reload data to reflect changes
+      await loadData();
+      alert('Pedido médico procesado con IA exitosamente');
+    } catch (error) {
+      console.error('Error al autorizar con IA:', error);
+      alert('Error al procesar el pedido con IA');
+    }
   };
 
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.affiliateName.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || order.authorizationStatus === statusFilter;
-    const matchesRequesterType = requesterTypeFilter === 'all' || order.requesterType === requesterTypeFilter;
-    const matchesUrgency = urgencyFilter === 'all' || order.urgency.id.toString() === urgencyFilter;
+  // Add debounced search to avoid too many API calls
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (page === 1) {
+        loadData();
+      } else {
+        setPage(1); // Reset to first page when searching
+      }
+    }, 500);
 
-    return matchesSearch && matchesStatus && matchesRequesterType && matchesUrgency;
-  });
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
+
+  // Show error message if there's an error
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error al cargar los datos</h3>
+              <p className="mt-2 text-sm text-red-700">{error}</p>
+              <button
+                onClick={() => loadData()}
+                className="mt-2 bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded text-sm"
+              >
+                Reintentar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -411,7 +369,7 @@ const MedicalOrderListPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order) => (
+              {orders.map((order) => (
                 <tr key={order.orderId} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -527,13 +485,70 @@ const MedicalOrderListPage: React.FC = () => {
       </div>
 
       {/* Empty State */}
-      {filteredOrders.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No hay pedidos médicos</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            No se encontraron pedidos que coincidan con los filtros aplicados.
-          </p>
+      {!loading && orders.length === 0 && (
+        <div className="bg-white rounded-lg shadow-sm border">
+          <div className="text-center py-12">
+            <FileText className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No hay pedidos médicos</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              No se encontraron pedidos que coincidan con los filtros aplicados.
+            </p>
+            <Link
+              to="/admin/medical-orders/create"
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Crear primer pedido
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 rounded-lg shadow-sm border">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page === totalPages}
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Siguiente
+            </button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Mostrando página <span className="font-medium">{page}</span> de{' '}
+                <span className="font-medium">{totalPages}</span>
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <button
+                  onClick={() => setPage(Math.max(1, page - 1))}
+                  disabled={page === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                <button
+                  onClick={() => setPage(Math.min(totalPages, page + 1))}
+                  disabled={page === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                </button>
+              </nav>
+            </div>
+          </div>
         </div>
       )}
     </div>

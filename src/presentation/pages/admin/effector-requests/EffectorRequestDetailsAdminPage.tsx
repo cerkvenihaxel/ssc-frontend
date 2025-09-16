@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
+import {
   ArrowLeft,
   Edit,
   Trash2,
@@ -20,13 +20,17 @@ import {
   MapPin,
   Users,
   TrendingUp,
-  Download
+  Download,
+  Shield,
+  ThumbsUp,
+  ThumbsDown
 } from 'lucide-react';
 import BaseLayout from '../../../../shared/components/layout/BaseLayout';
 import Button from '../../../../shared/components/ui/Button';
 import { useToast } from '../../../../shared/components/ui/ToastContainer';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useObfuscation } from '../../../../shared/contexts/ObfuscationContext';
+import AuthorizeEffectorRequestModal from '../../../../shared/components/modals/AuthorizeEffectorRequestModal';
 
 interface EffectorRequest {
   request_id: string;
@@ -100,6 +104,8 @@ const EffectorRequestDetailsAdminPage: React.FC = () => {
   const [request, setRequest] = useState<EffectorRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authorizing, setAuthorizing] = useState(false);
 
   // Cargar detalles del pedido
   const loadRequestDetails = async () => {
@@ -138,6 +144,59 @@ const EffectorRequestDetailsAdminPage: React.FC = () => {
       showError('Error', error.response?.data?.message || 'Error al eliminar el pedido');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  // Verificar si el usuario puede autorizar
+  const canAuthorize = () => {
+    if (!user) return false;
+    // Admin (roleId: 1) o Auditor (roleId: 4) pueden autorizar
+    return user.roleId === 1 || user.roleId === 4 || user.role === 'Administrador' || user.role === 'Auditor';
+  };
+
+  // Verificar si el pedido puede ser autorizado
+  const canBeAuthorized = () => {
+    if (!request) return false;
+    // Solo pedidos pendientes pueden ser autorizados
+    return request.state?.state_name === 'PENDIENTE';
+  };
+
+  // Aprobar pedido
+  const handleApprove = async (requestId: string, notes?: string) => {
+    try {
+      setAuthorizing(true);
+      await obfuscatedApiClient.post(`/v1/effector-requests/${requestId}/approve`, {
+        decision: 'approved',
+        comments: notes || '',
+        approvedBy: user?.userId
+      });
+      showSuccess('Éxito', 'Pedido aprobado exitosamente');
+      await loadRequestDetails(); // Recargar detalles
+    } catch (error: any) {
+      console.error('Error approving request:', error);
+      showError('Error', error.response?.data?.message || 'Error al aprobar el pedido');
+    } finally {
+      setAuthorizing(false);
+    }
+  };
+
+  // Rechazar pedido
+  const handleReject = async (requestId: string, reason: string, notes?: string) => {
+    try {
+      setAuthorizing(true);
+      await obfuscatedApiClient.post(`/v1/effector-requests/${requestId}/approve`, {
+        decision: 'rejected',
+        rejectionReason: reason,
+        comments: notes || '',
+        approvedBy: user?.userId
+      });
+      showSuccess('Éxito', 'Pedido rechazado exitosamente');
+      await loadRequestDetails(); // Recargar detalles
+    } catch (error: any) {
+      console.error('Error rejecting request:', error);
+      showError('Error', error.response?.data?.message || 'Error al rechazar el pedido');
+    } finally {
+      setAuthorizing(false);
     }
   };
 
@@ -291,22 +350,40 @@ const EffectorRequestDetailsAdminPage: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="mt-4 sm:mt-0 flex space-x-3">
+          <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
+            {/* Botones de Autorización - Solo para Admin y Auditor */}
+            {canAuthorize() && canBeAuthorized() && (
+              <>
+                <Button
+                  variant="success"
+                  size="sm"
+                  onClick={() => setShowAuthModal(true)}
+                  disabled={authorizing}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Autorizar Pedido
+                </Button>
+              </>
+            )}
+
             <Button variant="outline-primary" size="sm">
               <Download className="w-4 h-4 mr-2" />
               Exportar
             </Button>
             <Button variant="outline-primary" size="sm">
-                                <Download className="w-4 h-4 mr-2" />
+              <Download className="w-4 h-4 mr-2" />
               Imprimir
             </Button>
+
+            {/* Botones de edición y eliminación */}
             <Link to={`/admin/effector-requests/${request.request_id}/edit`}>
               <Button variant="primary" size="sm">
                 <Edit className="w-4 h-4 mr-2" />
                 Editar
               </Button>
             </Link>
-            <Button 
+            <Button
               variant="outline-secondary"
               size="sm"
               onClick={handleDelete}
@@ -699,6 +776,18 @@ const EffectorRequestDetailsAdminPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Autorización */}
+      {request && (
+        <AuthorizeEffectorRequestModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          request={request}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          loading={authorizing}
+        />
+      )}
     </BaseLayout>
   );
 };

@@ -409,7 +409,7 @@ const BaseLayout: React.FC<BaseLayoutProps> = ({ children, title }) => {
             <Heart className="w-5 h-5 text-primary transition-transform duration-200 ease-out group-hover:scale-110" />
           </div>
           <h1 className="ml-3 text-lg font-bold text-white transition-transform duration-200 ease-out group-hover:translate-x-1">
-            VadaSoft
+            SSC Salud
           </h1>
         </div>
         <button

@@ -16,7 +16,10 @@ import {
   Clock,
   XCircle,
   FileText,
-  Building
+  Building,
+  Shield,
+  ShieldCheck,
+  Ban
 } from 'lucide-react';
 import BaseLayout from '../../../shared/components/layout/BaseLayout';
 import Button from '../../../shared/components/ui/Button';
@@ -24,6 +27,8 @@ import Input from '../../../shared/components/ui/Input';
 import { useToast } from '../../../shared/components/ui/ToastContainer';
 import { useAuth } from '../../contexts/AuthContext';
 import { useObfuscation } from '../../../shared/contexts/ObfuscationContext';
+import { useEffectorRequests } from '../../hooks/useEffectorRequests';
+import AuthorizeEffectorRequestModal from '../../../shared/components/modals/AuthorizeEffectorRequestModal';
 
 interface EffectorRequest {
   request_id: string;
@@ -64,11 +69,18 @@ const EffectorRequestListPage: React.FC = () => {
   const { showSuccess, showError } = useToast();
   const { user } = useAuth();
   const { obfuscatedApiClient } = useObfuscation();
+  const { 
+    quickApproveRequest, 
+    quickRejectRequest, 
+    loading: serviceLoading 
+  } = useEffectorRequests();
 
   const [requests, setRequests] = useState<EffectorRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<any>({});
   const [showFilters, setShowFilters] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<EffectorRequest | null>(null);
 
   const [filters, setFilters] = useState<Filters>({
     search: '',
@@ -147,6 +159,48 @@ const EffectorRequestListPage: React.FC = () => {
       'URGENTE': 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
     };
     return colors[priority as keyof typeof colors] || 'bg-gray-100 text-gray-800';
+  };
+
+  // Verificar si el usuario tiene permisos de autorización
+  const canAuthorize = () => {
+    if (!user?.roleId) return false;
+    const userRole = user.roleId === 1 ? 'Administrador' : 
+                     user.roleId === 3 ? 'Auditor' : '';
+    return ['Administrador', 'Auditor'].includes(userRole);
+  };
+
+  // Abrir modal de autorización
+  const handleOpenAuthModal = (request: EffectorRequest) => {
+    setSelectedRequest(request);
+    setShowAuthModal(true);
+  };
+
+  // Manejar aprobación
+  const handleApprove = async (requestId: string, notes?: string) => {
+    try {
+      await quickApproveRequest(requestId, notes);
+      showSuccess('Éxito', 'Pedido aprobado exitosamente');
+      setShowAuthModal(false);
+      setSelectedRequest(null);
+      loadRequests(); // Recargar la lista
+    } catch (error: any) {
+      console.error('Error approving request:', error);
+      showError('Error', error.message || 'Error al aprobar el pedido');
+    }
+  };
+
+  // Manejar rechazo
+  const handleReject = async (requestId: string, reason: string, notes?: string) => {
+    try {
+      await quickRejectRequest(requestId, reason);
+      showSuccess('Éxito', 'Pedido rechazado exitosamente');
+      setShowAuthModal(false);
+      setSelectedRequest(null);
+      loadRequests(); // Recargar la lista
+    } catch (error: any) {
+      console.error('Error rejecting request:', error);
+      showError('Error', error.message || 'Error al rechazar el pedido');
+    }
   };
 
   // Eliminar pedido
@@ -485,6 +539,22 @@ const EffectorRequestListPage: React.FC = () => {
                         Ver
                       </Button>
                       
+                      {/* Botones de autorización - Solo para admin y auditores */}
+                      {canAuthorize() && request.state?.state_name === 'PENDIENTE' && (
+                        <>
+                          <Button
+                            variant="success"
+                            size="sm"
+                            onClick={() => handleOpenAuthModal(request)}
+                            className="flex items-center gap-1"
+                            disabled={serviceLoading}
+                          >
+                            <ShieldCheck className="w-4 h-4" />
+                            Autorizar
+                          </Button>
+                        </>
+                      )}
+                      
                       {(request.state?.state_name === 'PENDIENTE' || request.state?.state_name === 'RECHAZADO') && (
                         <Button
                           variant="secondary"
@@ -515,6 +585,21 @@ const EffectorRequestListPage: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Modal de Autorización */}
+        {showAuthModal && selectedRequest && (
+          <AuthorizeEffectorRequestModal
+            isOpen={showAuthModal}
+            onClose={() => {
+              setShowAuthModal(false);
+              setSelectedRequest(null);
+            }}
+            request={selectedRequest}
+            onApprove={handleApprove}
+            onReject={handleReject}
+            loading={serviceLoading}
+          />
+        )}
       </div>
     </BaseLayout>
   );
