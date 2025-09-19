@@ -163,9 +163,9 @@ const EffectorRequestListPage: React.FC = () => {
 
   // Verificar si el usuario tiene permisos de autorización
   const canAuthorize = () => {
-    if (!user?.roleId) return false;
-    const userRole = user.roleId === 1 ? 'Administrador' : 
-                     user.roleId === 3 ? 'Auditor' : '';
+    if (!user?.role?.id) return false;
+    const userRole = user.role.id === 1 ? 'Administrador' :
+                     user.role.id === 3 ? 'Auditor' : '';
     return ['Administrador', 'Auditor'].includes(userRole);
   };
 

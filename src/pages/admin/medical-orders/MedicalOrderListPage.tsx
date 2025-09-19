@@ -92,7 +92,8 @@ const MedicalOrderListPage: React.FC = () => {
     return badges[type] || 'bg-gray-100 text-gray-800';
   };
 
-  const getAuthorizationTypeIcon = (type: string) => {
+  const getAuthorizationTypeIcon = (type: string | undefined) => {
+    if (!type) return null;
     switch (type) {
       case 'automatic':
         return <Brain className="h-4 w-4 text-blue-600" />;
@@ -105,7 +106,8 @@ const MedicalOrderListPage: React.FC = () => {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined || amount === null) return '-';
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS'

@@ -151,7 +151,7 @@ const EffectorRequestDetailsAdminPage: React.FC = () => {
   const canAuthorize = () => {
     if (!user) return false;
     // Admin (roleId: 1) o Auditor (roleId: 4) pueden autorizar
-    return user.roleId === 1 || user.roleId === 4 || user.role === 'Administrador' || user.role === 'Auditor';
+    return user.role.id === 1 || user.role.id === 4 || user.role.name === 'Administrador' || user.role.name === 'Auditor';
   };
 
   // Verificar si el pedido puede ser autorizado

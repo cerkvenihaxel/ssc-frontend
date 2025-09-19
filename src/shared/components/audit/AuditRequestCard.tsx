@@ -34,7 +34,7 @@ export const AuditRequestCard: React.FC<AuditRequestCardProps> = ({
             {auditRequest.quotation?.quotation_number || 'Sin número'}
           </h3>
           <p className="text-sm text-gray-600">
-            Pedido: {auditRequest.medical_order?.order_number || 'Sin número'}
+            Pedido: {auditRequest.medicalOrder?.order_number || 'Sin número'}
           </p>
           <p className="text-xs text-gray-500 mt-1">
             Creado: {formatDate(auditRequest.created_at)}

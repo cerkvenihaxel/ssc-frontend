@@ -1,4 +1,4 @@
-import type { MaterialDeliveryRepository } from '../../domain/repositories/MaterialDeliveryRepository';
+import type { MaterialDeliveryRepository } from '../../infrastructure/repositories/MaterialDeliveryRepository';
 import type { 
   MaterialDelivery, 
   DeliveryFilters, 
