@@ -13,11 +13,11 @@ export class MaterialDeliveryService {
     try {
       const response = await this.materialDeliveryRepository.getDeliveries(filters);
       return {
-        data: response.data || [],
-        total: response.total || 0,
-        page: response.page || 1,
-        limit: response.limit || 10,
-        total_pages: response.total_pages || 1
+        data: response.data.data || [],
+        total: response.data.total || 0,
+        page: response.data.page || 1,
+        limit: response.data.limit || 10,
+        total_pages: response.data.total_pages || 1
       };
     } catch (error) {
       console.error('Error getting deliveries:', error);

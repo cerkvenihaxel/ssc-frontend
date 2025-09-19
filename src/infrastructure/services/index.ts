@@ -5,18 +5,18 @@ export { ApiClient } from '../http/ApiClient';
 export * from './medical-orders.service';
 export {
   effectorRequestsService,
-  type EffectorRequestFilters,
-  type EffectorRequestStats
+  type EffectorRequestStatistics,
+  type EffectorRequestQueryParams
 } from './effector-requests.service';
 export {
   auditorService,
-  type AuditRequestFilters,
-  type AuditStats
+  type AuditStatistics,
+  type AuditQueryParams
 } from './auditor.service';
 export {
   materialDeliveryService,
-  type DeliveryFilters as MaterialDeliveryFilters,
-  type DeliveryStatistics as MaterialDeliveryStatistics
+  type DeliveryStatistics,
+  type MaterialDeliveryQueryParams
 } from './material-delivery.service';
 
 // Existing services
